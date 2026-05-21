@@ -220,7 +220,7 @@ git commit -m "Preparar deploy na Vercel"
 Envie para GitHub, GitLab ou Bitbucket (exemplo GitHub):
 
 ```bash
-git remote add origin https://github.com/SEU_USUARIO/cobranca-sistema.git
+git remote add origin https://github.com/samu-svg/releases-devedores.git
 git branch -M main
 git push -u origin main
 ```
