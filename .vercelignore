@@ -1,0 +1,14 @@
+**/node_modules/**
+frontend/dist/**
+frontend/dist-web/**
+frontend/out/**
+frontend/backend-bundle/**
+backend/dist/**
+.cursor/**
+**/*.exe
+**/*.blockmap
+**/*.7z
+*.log
+.env
+.env.*
+!.env.example
