@@ -1,0 +1,1362 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --cor-primaria: #1a56db;
+  --cor-primaria-hover: #1444b0;
+  --cor-fundo: #f8fafc;
+  --cor-card: #ffffff;
+  --cor-texto: #1e293b;
+  --cor-texto-secundario: #64748b;
+  --cor-borda: #e2e8f0;
+  --cor-sucesso: #16a34a;
+  --cor-sucesso-hover: #15803d;
+  --cor-alerta: #ea580c;
+  --cor-perigo: #dc2626;
+  --sombra: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --raio-borda: 8px;
+}
+
+body {
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  line-height: 1.6;
+}
+
+/* =============================== Layout Principal =============================== */
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-conteudo {
+  flex: 1;
+  padding: 32px 32px 48px;
+  overflow-y: auto;
+  max-width: 1200px;
+}
+
+/* =============================== Sidebar =============================== */
+
+.sidebar {
+  width: 240px;
+  background: #0f172a;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logo-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--cor-primaria);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.sidebar-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
+.sidebar-subtitulo {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 10px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.sidebar-item-ativo {
+  background: rgba(26, 86, 219, 0.2);
+  color: #93bbfd;
+}
+
+.sidebar-item-ativo:hover {
+  background: rgba(26, 86, 219, 0.25);
+  color: #93bbfd;
+}
+
+/* Sidebar rodapé */
+
+.sidebar-rodape {
+  margin-top: auto;
+  padding: 12px 10px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-usuario {
+  padding: 6px 14px 8px;
+}
+
+.sidebar-email {
+  font-size: 0.72rem;
+  color: #64748b;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-logout {
+  color: #ef4444 !important;
+}
+
+.sidebar-logout:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #f87171 !important;
+}
+
+/* =============================== Login =============================== */
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--cor-card);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 32px;
+  animation: modalEntrar 0.3s ease-out;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--cor-primaria);
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.login-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+  margin-bottom: 4px;
+}
+
+.login-header p {
+  font-size: 0.875rem;
+  color: var(--cor-texto-secundario);
+}
+
+.login-card .form-group {
+  margin-bottom: 16px;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95rem;
+  margin-top: 8px;
+}
+
+.login-erro {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.login-mensagem {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.84rem;
+  color: var(--cor-sucesso);
+  background: #f0fdf4;
+  border-radius: var(--raio-borda);
+  margin-bottom: 8px;
+}
+
+.login-alternar {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.84rem;
+  color: var(--cor-texto-secundario);
+}
+
+.login-link {
+  background: none;
+  border: none;
+  color: var(--cor-primaria);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+/* =============================== Dashboard =============================== */
+
+.dashboard {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-titulo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--cor-texto);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  box-shadow: var(--sombra);
+  padding: 20px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.kpi-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.kpi-conteudo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kpi-titulo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cor-texto-secundario);
+  margin-bottom: 4px;
+}
+
+.kpi-valor {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.kpi-subtexto {
+  font-size: 0.72rem;
+  color: var(--cor-texto-secundario);
+  margin-top: 2px;
+}
+
+/* Distribuição por status */
+
+.dashboard-secao {
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  box-shadow: var(--sombra);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.dashboard-secao h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--cor-texto);
+}
+
+.barra-status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barra-status {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--cor-fundo);
+}
+
+.barra-segmento {
+  transition: width 0.4s ease;
+  min-width: 4px;
+}
+
+.barra-pago {
+  background: var(--cor-sucesso);
+}
+
+.barra-pendente {
+  background: var(--cor-alerta);
+}
+
+.barra-atrasado {
+  background: var(--cor-perigo);
+}
+
+.barra-legenda {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+  font-weight: 500;
+}
+
+.legenda-cor {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.legenda-pago { background: var(--cor-sucesso); }
+.legenda-pendente { background: var(--cor-alerta); }
+.legenda-atrasado { background: var(--cor-perigo); }
+
+/* Layout duplo (top devedores + vencimentos) */
+
+.dashboard-duplo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-duplo {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-vazio {
+  text-align: center;
+  padding: 24px;
+  color: var(--cor-texto-secundario);
+  font-size: 0.85rem;
+}
+
+/* Tabela top devedores */
+
+.tabela-top {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 0;
+}
+
+.tabela-top thead th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cor-texto-secundario);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tabela-top tbody td {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--cor-borda);
+  vertical-align: middle;
+}
+
+.tabela-top tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.top-rank {
+  font-weight: 700;
+  color: var(--cor-texto-secundario);
+  width: 24px;
+}
+
+.top-nome {
+  font-weight: 600;
+  display: block;
+  font-size: 0.82rem;
+}
+
+.top-cpf {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.7rem;
+  color: var(--cor-texto-secundario);
+  display: block;
+}
+
+.top-atrasadas {
+  color: var(--cor-perigo);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Lista de vencimentos */
+
+.lista-vencimentos {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vencimento-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 6px;
+  transition: background-color 0.1s;
+}
+
+.vencimento-item:hover {
+  background: var(--cor-fundo);
+}
+
+.vencimento-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vencimento-nome {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vencimento-valor {
+  font-size: 0.75rem;
+  color: var(--cor-texto-secundario);
+  font-variant-numeric: tabular-nums;
+}
+
+.vencimento-prazo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cor-alerta);
+  background: #fff7ed;
+  padding: 2px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+header {
+  margin-bottom: 32px;
+}
+
+header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+header p {
+  color: var(--cor-texto-secundario);
+  margin-top: 4px;
+}
+
+/* =============================== Cards =============================== */
+
+.card {
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  box-shadow: var(--sombra);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.card h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* =============================== Badges =============================== */
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.badge-atrasado {
+  background: #fef2f2;
+  color: var(--cor-perigo);
+}
+
+.badge-pendente {
+  background: #fff7ed;
+  color: var(--cor-alerta);
+}
+
+.badge-pago {
+  background: #f0fdf4;
+  color: var(--cor-sucesso);
+}
+
+/* =============================== Tabela =============================== */
+
+.tabela-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cor-texto-secundario);
+  border-bottom: 2px solid var(--cor-borda);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--cor-borda);
+  font-size: 0.84rem;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.linha-pago {
+  opacity: 0.55;
+}
+
+.valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.juros {
+  color: var(--cor-perigo);
+}
+
+.pago {
+  color: var(--cor-sucesso);
+}
+
+.saldo-devedor {
+  color: var(--cor-texto);
+  font-weight: 700;
+}
+
+.nome-devedor {
+  font-weight: 500;
+}
+
+.cpf {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+}
+
+.atraso {
+  white-space: nowrap;
+}
+
+.dias-atraso {
+  color: var(--cor-perigo);
+  font-weight: 600;
+}
+
+.em-dia {
+  color: var(--cor-texto-secundario);
+  font-size: 0.8rem;
+}
+
+.acoes {
+  white-space: nowrap;
+  display: flex;
+  gap: 4px;
+}
+
+/* =============================== Formulário =============================== */
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cor-texto-secundario);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form-group input {
+  padding: 8px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+/* Esconder setinhas do input number no Chrome/Electron */
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button,
+.input-com-botao input[type="number"]::-webkit-outer-spin-button,
+.input-com-botao input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.form-group input[type="number"],
+.input-com-botao input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.form-group input:focus {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
+}
+
+.input-com-botao {
+  display: flex;
+  gap: 8px;
+}
+
+.input-com-botao input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-com-botao input:focus {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
+}
+
+/* =============================== Botões =============================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primario {
+  background-color: var(--cor-primaria);
+  color: white;
+}
+
+.btn-primario:hover:not(:disabled) {
+  background-color: var(--cor-primaria-hover);
+}
+
+.btn-sucesso {
+  background-color: var(--cor-sucesso);
+  color: white;
+}
+
+.btn-sucesso:hover:not(:disabled) {
+  background-color: var(--cor-sucesso-hover);
+}
+
+.btn-perigo {
+  background: none;
+  color: var(--cor-perigo);
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+
+.btn-perigo:hover {
+  background: #fef2f2;
+}
+
+.btn-outline {
+  background: none;
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-secundario);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  background: var(--cor-fundo);
+  border-color: var(--cor-texto-secundario);
+}
+
+.btn-cancelar {
+  background: none;
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-secundario);
+}
+
+.btn-cancelar:hover {
+  background: var(--cor-fundo);
+}
+
+/* =============================== Modal =============================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--cor-card);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 440px;
+  padding: 28px;
+  animation: modalEntrar 0.2s ease-out;
+}
+
+@keyframes modalEntrar {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.modal-fechar {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--cor-texto-secundario);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.modal-fechar:hover {
+  color: var(--cor-texto);
+}
+
+.modal-resumo {
+  background: var(--cor-fundo);
+  border-radius: var(--raio-borda);
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resumo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.resumo-label {
+  color: var(--cor-texto-secundario);
+}
+
+.resumo-valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumo-valor.juros {
+  color: var(--cor-perigo);
+}
+
+.resumo-valor.pago {
+  color: var(--cor-sucesso);
+}
+
+.resumo-destaque {
+  border-top: 1px solid var(--cor-borda);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.resumo-destaque .resumo-label {
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.resumo-destaque .resumo-valor {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.modal-acoes {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.modal-erro {
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 0.84rem;
+}
+
+.modal-detalhes {
+  max-width: 560px;
+}
+
+.detalhes-subtitulo {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 16px 0 10px;
+  color: var(--cor-texto);
+}
+
+.detalhes-vazio {
+  text-align: center;
+  padding: 16px;
+  color: var(--cor-texto-secundario);
+  font-size: 0.84rem;
+}
+
+.detalhes-lista-pagamentos {
+  overflow-x: auto;
+}
+
+.tabela-pagamentos {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 0;
+}
+
+.tabela-pagamentos thead th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cor-texto-secundario);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tabela-pagamentos tbody td {
+  padding: 8px 10px;
+  font-size: 0.84rem;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tabela-pagamentos tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabela-pagamentos tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* =============================== Seção Devedores =============================== */
+
+.secao-devedores {
+  margin-top: 8px;
+}
+
+.secao-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.secao-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.secao-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-importar {
+  cursor: pointer;
+}
+
+.resultado-importacao {
+  position: relative;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--raio-borda);
+  padding: 12px 40px 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  color: var(--cor-sucesso);
+}
+
+.resultado-importacao.com-erros {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: var(--cor-alerta);
+}
+
+.resultado-importacao details {
+  margin-top: 8px;
+}
+
+.resultado-importacao summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.resultado-importacao ul {
+  margin-top: 6px;
+  padding-left: 20px;
+  font-size: 0.78rem;
+  color: var(--cor-texto-secundario);
+}
+
+.btn-fechar-resultado {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+}
+
+.btn-fechar-resultado:hover {
+  opacity: 1;
+}
+
+/* =============================== Barra de Pesquisa =============================== */
+
+.barra-pesquisa {
+  display: flex;
+  align-items: center;
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  padding: 8px 14px;
+  margin-bottom: 16px;
+  gap: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.barra-pesquisa:focus-within {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
+}
+
+.icone-lupa {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.barra-pesquisa input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--cor-texto);
+}
+
+.barra-pesquisa input::placeholder {
+  color: var(--cor-texto-secundario);
+}
+
+.btn-limpar-busca {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--cor-texto-secundario);
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.btn-limpar-busca:hover {
+  color: var(--cor-texto);
+}
+
+/* =============================== Card Devedor =============================== */
+
+.card-devedor {
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  box-shadow: var(--sombra);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.card-devedor-pago {
+  opacity: 0.6;
+}
+
+.card-devedor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  gap: 16px;
+  transition: background-color 0.15s;
+}
+
+.card-devedor-header:hover {
+  background-color: #f8fafc;
+}
+
+.devedor-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.devedor-nome {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.devedor-cpf {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+}
+
+.devedor-contato {
+  font-size: 0.78rem;
+  color: var(--cor-texto-secundario);
+}
+
+.devedor-qtd {
+  font-size: 0.78rem;
+  color: var(--cor-texto-secundario);
+}
+
+.qtd-atrasadas {
+  color: var(--cor-perigo);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.devedor-totais {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.total-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.total-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-secundario);
+}
+
+.total-valor {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.total-valor.juros {
+  color: var(--cor-perigo);
+}
+
+.total-valor.pago {
+  color: var(--cor-sucesso);
+}
+
+.total-destaque .total-valor {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.seta {
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.seta-aberta {
+  transform: rotate(180deg);
+}
+
+.devedor-detalhes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detalhe-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.detalhe-botoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-secundario);
+  border: 1px solid var(--cor-borda);
+}
+
+.chip-perigo {
+  background: #fef2f2;
+  color: var(--cor-perigo);
+  border-color: #fecaca;
+}
+
+.chip-alerta {
+  background: #fff7ed;
+  color: var(--cor-alerta);
+  border-color: #fed7aa;
+}
+
+.chip-sucesso {
+  background: #f0fdf4;
+  color: var(--cor-sucesso);
+  border-color: #bbf7d0;
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+}
+
+.card-devedor-dividas {
+  border-top: 1px solid var(--cor-borda);
+  padding: 0 20px 16px;
+  overflow-x: auto;
+}
+
+.card-devedor-dividas table {
+  min-width: 700px;
+}
+
+.dividas-vazias {
+  padding: 20px;
+  text-align: center;
+  color: var(--cor-texto-secundario);
+  font-size: 0.875rem;
+}
+
+/* =============================== Utilitários =============================== */
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--cor-texto-secundario);
+}
+
+.erro {
+  text-align: center;
+  padding: 16px;
+  color: var(--cor-perigo);
+  background: #fef2f2;
+  border-radius: var(--raio-borda);
+}
+
+.tabela-vazia {
+  text-align: center;
+  padding: 32px;
+  color: var(--cor-texto-secundario);
+}

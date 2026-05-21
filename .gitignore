@@ -1,0 +1,12 @@
+.cursor/
+node_modules/
+dist/
+out/
+*.log
+.env
+.env.*
+!.env.example
+.env.build
+frontend/backend-bundle/
+frontend/dist-web/
+.vercel
