@@ -227,8 +227,12 @@ git push -u origin main
 
 ### 2. Conectar na Vercel
 
+**Projeto já criado:** [cobranca-sistema-2026.vercel.app](https://cobranca-sistema-2026.vercel.app)
+
+Para deploy automático a cada `git push`, conecte o repositório Git no painel da Vercel (**Settings → Git**).
+
 1. Acesse [vercel.com](https://vercel.com) e faça login.
-2. **Add New Project** → importe o repositório Git.
+2. **Add New Project** → importe o repositório Git (ou use o projeto `cobranca-sistema-2026` existente).
 3. A Vercel detecta o `vercel.json` na raiz (não altere o **Root Directory**).
 4. Em **Environment Variables**, adicione (Production, Preview e Development):
 
