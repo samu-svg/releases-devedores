@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import type { Devedor as DevedorApi } from "../App";
+import { API_URL } from "../lib/api";
 
 interface Devedor {
   id: number;
@@ -24,14 +26,27 @@ interface Props {
   token: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
-
 async function buscarDevedores(token: string): Promise<Devedor[]> {
-  const res = await fetch(`${API_BASE}/dividas`, {
+  const res = await fetch(`${API_URL}/devedores`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Falha ao buscar devedores");
-  return res.json();
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.erro ?? `Falha ao buscar devedores (HTTP ${res.status})`);
+  }
+  const data: DevedorApi[] = await res.json();
+  return data.flatMap((dev) =>
+    dev.dividas.map((d) => ({
+      id: d.id,
+      devedor: dev.nome,
+      cpfCnpj: dev.cpfCnpj,
+      valorOriginal: d.valorOriginal,
+      saldoDevedor: d.saldoDevedor,
+      diasAtraso: d.diasAtraso,
+      status: d.status,
+      dataVencimento: d.dataVencimento,
+    }))
+  );
 }
 
 async function dispararWebhook(webhookUrl: string, devedor: Devedor): Promise<void> {

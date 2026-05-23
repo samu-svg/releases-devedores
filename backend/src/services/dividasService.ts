@@ -69,14 +69,26 @@ export async function listarTodas(supabase: SupabaseClient): Promise<Divida[]> {
   if (error) throw new Error(`Erro ao listar dívidas: ${error.message}`);
 
   const dividas = data ?? [];
-  const resultado: Divida[] = [];
+  if (dividas.length === 0) return [];
 
-  for (const d of dividas) {
-    const pgtos = await buscarPagamentos(supabase, d.id);
-    resultado.push(toApiFormat(d as DividaComDevedor, pgtos));
+  const ids = dividas.map((d) => d.id);
+  const { data: todosPagamentos, error: errPag } = await supabase
+    .from("pagamentos")
+    .select("divida_id, valor_pago, data_pagamento")
+    .in("divida_id", ids);
+
+  if (errPag) throw new Error(`Erro ao listar pagamentos: ${errPag.message}`);
+
+  const pagamentosPorDivida = new Map<number, PagamentoParaCalculo[]>();
+  for (const p of todosPagamentos ?? []) {
+    const lista = pagamentosPorDivida.get(p.divida_id) ?? [];
+    lista.push({ valor_pago: p.valor_pago, data_pagamento: p.data_pagamento });
+    pagamentosPorDivida.set(p.divida_id, lista);
   }
 
-  return resultado;
+  return dividas.map((d) =>
+    toApiFormat(d as DividaComDevedor, pagamentosPorDivida.get(d.id) ?? [])
+  );
 }
 
 export async function buscarPorId(
