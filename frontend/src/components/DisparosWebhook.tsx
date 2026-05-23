@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Devedor as DevedorApi } from "../App";
-import { API_URL } from "../lib/api";
 
 interface Devedor {
   id: number;
@@ -23,20 +22,14 @@ interface RegistroDisparo {
 }
 
 interface Props {
-  token: string;
+  devedores: DevedorApi[];
+  carregando: boolean;
+  erro: string | null;
 }
 
-async function buscarDevedores(token: string): Promise<Devedor[]> {
-  const res = await fetch(`${API_URL}/devedores`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.erro ?? `Falha ao buscar devedores (HTTP ${res.status})`);
-  }
-  const data: DevedorApi[] = await res.json();
+function flattenDevedores(data: DevedorApi[]): Devedor[] {
   return data.flatMap((dev) =>
-    dev.dividas.map((d) => ({
+    (dev.dividas ?? []).map((d) => ({
       id: d.id,
       devedor: dev.nome,
       cpfCnpj: dev.cpfCnpj,
@@ -85,26 +78,16 @@ function formatarData(iso: string) {
   });
 }
 
-export default function DisparosWebhook({ token }: Props) {
+export default function DisparosWebhook({ devedores: devedoresApi, carregando, erro }: Props) {
   const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("webhook_url") ?? "");
   const [urlSalva, setUrlSalva] = useState(() => !!localStorage.getItem("webhook_url"));
-  const [devedores, setDevedores] = useState<Devedor[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erroBusca, setErroBusca] = useState("");
+  const devedores = useMemo(() => flattenDevedores(devedoresApi), [devedoresApi]);
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "atrasado">("atrasado");
   const [busca, setBusca] = useState("");
   const [registros, setRegistros] = useState<Map<number, RegistroDisparo>>(new Map());
   const [disparando, setDisparando] = useState(false);
   const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
-
-  useEffect(() => {
-    setCarregando(true);
-    buscarDevedores(token)
-      .then(setDevedores)
-      .catch((e) => setErroBusca(e.message))
-      .finally(() => setCarregando(false));
-  }, [token]);
 
   const devedoresFiltrados = devedores.filter((d) => {
     const matchStatus = filtroStatus === "todos" ? true : d.status === "atrasado";
@@ -263,8 +246,8 @@ export default function DisparosWebhook({ token }: Props) {
       <div className="tabela-wrapper">
         {carregando ? (
           <div className="estado-vazio"><div className="spinner" /><p>Carregando devedores…</p></div>
-        ) : erroBusca ? (
-          <div className="estado-vazio erro-texto"><span>⚠️</span><p>{erroBusca}</p></div>
+        ) : erro ? (
+          <div className="estado-vazio erro-texto"><span>⚠️</span><p>{erro}</p></div>
         ) : devedoresFiltrados.length === 0 ? (
           <div className="estado-vazio"><span>📭</span><p>Nenhum devedor encontrado.</p></div>
         ) : (

@@ -275,7 +275,11 @@ function AppAutenticado({ session }: { session: Session }) {
         )}
 
         {paginaAtual === "disparos" && (
-          <DisparosWebhook token={token} />
+          <DisparosWebhook
+            devedores={devedores}
+            carregando={carregando}
+            erro={erro}
+          />
         )}
 
         {paginaAtual === "devedores" && (
