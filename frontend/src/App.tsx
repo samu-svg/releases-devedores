@@ -10,6 +10,7 @@ import ModalPagamento from "./components/ModalPagamento";
 import ModalNovaDivida from "./components/ModalNovaDivida";
 import ModalDetalhesDivida from "./components/ModalDetalhesDivida";
 import ModalDetalhesDevedor from "./components/ModalDetalhesDevedor";
+import DisparosWebhook from "./components/DisparosWebhook";
 import { API_URL } from "./lib/api";
 
 export interface DividaResumida {
@@ -271,6 +272,10 @@ function AppAutenticado({ session }: { session: Session }) {
       <main className="app-conteudo">
         {paginaAtual === "dashboard" && (
           <Dashboard devedores={devedores} carregando={carregando} />
+        )}
+
+        {paginaAtual === "disparos" && (
+          <DisparosWebhook token={token} />
         )}
 
         {paginaAtual === "devedores" && (
