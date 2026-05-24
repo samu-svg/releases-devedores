@@ -72,8 +72,11 @@ export default function App() {
 
   if (carregandoAuth) {
     return (
-      <div className="login-container">
-        <p className="loading">Carregando...</p>
+      <div className="loading-tela-cheia">
+        <div className="dashboard-estado">
+          <div className="dashboard-spinner" />
+          <p>Carregando…</p>
+        </div>
       </div>
     );
   }
@@ -104,6 +107,8 @@ function AppAutenticado({ session }: { session: Session }) {
   } | null>(null);
   const [devedorDetalhes, setDevedorDetalhes] = useState<Devedor | null>(null);
   const [busca, setBusca] = useState("");
+  const [filtroDevedor, setFiltroDevedor] = useState<"todos" | "atraso" | "quitados">("todos");
+  const [sidebarAberta, setSidebarAberta] = useState(false);
   const [importando, setImportando] = useState(false);
   const [resultadoImportacao, setResultadoImportacao] =
     useState<ResultadoImportacao | null>(null);
@@ -264,14 +269,37 @@ function AppAutenticado({ session }: { session: Session }) {
 
   return (
     <div className="app-layout">
+      <div
+        className={`sidebar-overlay ${sidebarAberta ? "visivel" : ""}`}
+        onClick={() => setSidebarAberta(false)}
+      />
       <Sidebar
         paginaAtual={paginaAtual}
         onNavegar={setPaginaAtual}
         email={session.user.email ?? ""}
         onLogout={handleLogout}
+        aberta={sidebarAberta}
+        onFechar={() => setSidebarAberta(false)}
       />
 
       <main className="app-conteudo">
+        <div className="app-topbar">
+          <button
+            type="button"
+            className="btn-menu-mobile"
+            onClick={() => setSidebarAberta(true)}
+            aria-label="Abrir menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <span className="app-topbar-titulo">
+            {paginaAtual === "dashboard" ? "Dashboard" : paginaAtual === "devedores" ? "Devedores" : "Disparos"}
+          </span>
+        </div>
         {paginaAtual === "dashboard" && (
           <Dashboard devedores={devedores} carregando={carregando} />
         )}
@@ -287,11 +315,38 @@ function AppAutenticado({ session }: { session: Session }) {
 
         {paginaAtual === "devedores" && (
           <>
+            <div className="pagina-cabecalho">
+              <h1>Devedores</h1>
+              <p>Gerencie dívidas, pagamentos e importações da carteira.</p>
+            </div>
+
             <FormularioDivida onSubmit={adicionarDividaFormulario} />
 
             <div className="secao-devedores">
-              <div className="secao-header">
-                <h2>Devedores</h2>
+              <div className="pagina-toolbar">
+                <div className="filtro-pills">
+                  <button
+                    type="button"
+                    className={`filtro-pill ${filtroDevedor === "todos" ? "ativo" : ""}`}
+                    onClick={() => setFiltroDevedor("todos")}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    type="button"
+                    className={`filtro-pill ${filtroDevedor === "atraso" ? "ativo" : ""}`}
+                    onClick={() => setFiltroDevedor("atraso")}
+                  >
+                    Com atraso
+                  </button>
+                  <button
+                    type="button"
+                    className={`filtro-pill ${filtroDevedor === "quitados" ? "ativo" : ""}`}
+                    onClick={() => setFiltroDevedor("quitados")}
+                  >
+                    Quitados
+                  </button>
+                </div>
                 <div className="secao-acoes">
                   <label className="btn btn-outline btn-importar">
                     {importando ? "Importando..." : "Importar CSV"}
@@ -344,7 +399,12 @@ function AppAutenticado({ session }: { session: Session }) {
               )}
 
               <div className="barra-pesquisa">
-                <span className="icone-lupa">&#128269;</span>
+                <span className="icone-lupa">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
                 <input
                   type="text"
                   placeholder="Pesquisar por nome ou CPF/CNPJ..."
@@ -355,50 +415,83 @@ function AppAutenticado({ session }: { session: Session }) {
                   <button
                     className="btn-limpar-busca"
                     onClick={() => setBusca("")}
+                    aria-label="Limpar busca"
                   >
                     &times;
                   </button>
                 )}
               </div>
 
-              {carregando && <p className="loading">Carregando...</p>}
+              {carregando && (
+                <div className="dashboard-estado">
+                  <div className="dashboard-spinner" />
+                  <p>Carregando devedores…</p>
+                </div>
+              )}
               {erro && <p className="erro">{erro}</p>}
               {!carregando && !erro && devedores.length === 0 && (
-                <p className="tabela-vazia">Nenhum devedor cadastrado.</p>
+                <div className="estado-vazio-card">
+                  <span className="estado-vazio-icone">👥</span>
+                  <h3>Nenhum devedor cadastrado</h3>
+                  <p>Clique em &ldquo;Nova Dívida&rdquo; acima para começar a montar sua carteira.</p>
+                </div>
               )}
               {!carregando &&
                 !erro &&
                 (() => {
                   const termo = busca.toLowerCase();
-                  const filtrados = devedores.filter(
-                    (dev) =>
+                  const filtrados = devedores.filter((dev) => {
+                    const matchBusca =
                       !termo ||
                       dev.nome.toLowerCase().includes(termo) ||
-                      dev.cpfCnpj.toLowerCase().includes(termo)
-                  );
+                      dev.cpfCnpj.toLowerCase().includes(termo);
+                    const todasPagas =
+                      dev.dividas.length > 0 &&
+                      dev.dividas.every((d) => d.status === "pago");
+                    const matchFiltro =
+                      filtroDevedor === "todos" ||
+                      (filtroDevedor === "atraso" && dev.qtdAtrasadas > 0) ||
+                      (filtroDevedor === "quitados" && todasPagas);
+                    return matchBusca && matchFiltro;
+                  });
                   if (filtrados.length === 0 && devedores.length > 0) {
                     return (
-                      <p className="tabela-vazia">
-                        Nenhum devedor encontrado para &ldquo;{busca}&rdquo;.
-                      </p>
+                      <div className="estado-vazio-card">
+                        <span className="estado-vazio-icone">🔍</span>
+                        <h3>Nenhum resultado</h3>
+                        <p>
+                          {busca
+                            ? `Nenhum devedor encontrado para "${busca}".`
+                            : "Nenhum devedor neste filtro."}
+                        </p>
+                      </div>
                     );
                   }
-                  return filtrados.map((dev) => (
-                    <CardDevedor
-                      key={dev.id}
-                      devedor={dev}
-                      onPagar={(divida) =>
-                        setDividaPagamento({ divida, nomeDevedor: dev.nome })
-                      }
-                      onRemover={removerDivida}
-                      onNovaDivida={setDevedorNovaDivida}
-                      onDetalhes={(divida, nome) =>
-                        setDividaDetalhes({ divida, nomeDevedor: nome })
-                      }
-                      onDetalhesDevedor={setDevedorDetalhes}
-                      onRemoverDevedor={removerDevedor}
-                    />
-                  ));
+                  return (
+                    <>
+                      {filtrados.length > 0 && (
+                        <p className="contador-resultados">
+                          {filtrados.length} devedor{filtrados.length !== 1 ? "es" : ""}
+                        </p>
+                      )}
+                      {filtrados.map((dev) => (
+                        <CardDevedor
+                          key={dev.id}
+                          devedor={dev}
+                          onPagar={(divida) =>
+                            setDividaPagamento({ divida, nomeDevedor: dev.nome })
+                          }
+                          onRemover={removerDivida}
+                          onNovaDivida={setDevedorNovaDivida}
+                          onDetalhes={(divida, nome) =>
+                            setDividaDetalhes({ divida, nomeDevedor: nome })
+                          }
+                          onDetalhesDevedor={setDevedorDetalhes}
+                          onRemoverDevedor={removerDevedor}
+                        />
+                      ))}
+                    </>
+                  );
                 })()}
             </div>
           </>

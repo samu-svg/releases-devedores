@@ -21,6 +21,22 @@ function formatarData(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+function iniciais(nome: string): string {
+  return nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+}
+
+function classeStatus(devedor: Devedor, todasPagas: boolean): string {
+  if (todasPagas) return "card-devedor-pago";
+  if (devedor.qtdAtrasadas > 0) return "card-devedor-atraso";
+  return "card-devedor-pendente";
+}
+
 export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida, onDetalhes, onDetalhesDevedor, onRemoverDevedor }: Props) {
   const [aberto, setAberto] = useState(false);
   const todasPagas =
@@ -30,17 +46,19 @@ export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida,
   const qtdPagas = devedor.dividas.filter((d) => d.status === "pago").length;
 
   return (
-    <div className={`card-devedor ${todasPagas ? "card-devedor-pago" : ""}`}>
+    <div className={`card-devedor ${classeStatus(devedor, todasPagas)}`}>
       <div className="card-devedor-header" onClick={() => setAberto(!aberto)}>
         <div className="devedor-info">
-          <span className="devedor-nome">{devedor.nome}</span>
-          <span className="devedor-cpf">{devedor.cpfCnpj}</span>
-          {devedor.telefone && (
-            <span className="devedor-contato">{devedor.telefone}</span>
-          )}
-          {devedor.email && (
-            <span className="devedor-contato">{devedor.email}</span>
-          )}
+          <span className="devedor-avatar">{iniciais(devedor.nome)}</span>
+          <div className="devedor-info-texto">
+            <span className="devedor-nome">{devedor.nome}</span>
+            <div className="devedor-meta">
+              <span className="devedor-cpf">{devedor.cpfCnpj}</span>
+              {devedor.telefone && (
+                <span className="devedor-contato">{devedor.telefone}</span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="devedor-totais">
