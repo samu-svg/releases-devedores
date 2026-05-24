@@ -37,14 +37,15 @@ export async function criar(req: Request, res: Response): Promise<void> {
     const nova = await service.criar(req.supabase, req.userId, {
       devedor,
       cpfCnpj: typeof cpfCnpj === "string" ? cpfCnpj : "",
-      valorOriginal,
+      valorOriginal: Number(valorOriginal),
       dataVencimento,
       telefone,
       email,
     });
     res.status(201).json(nova);
   } catch (err) {
-    res.status(500).json({ erro: "Erro interno ao criar dívida" });
+    const msg = err instanceof Error ? err.message : "Erro interno ao criar dívida";
+    res.status(500).json({ erro: msg });
   }
 }
 

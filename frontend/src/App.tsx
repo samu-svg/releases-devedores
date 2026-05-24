@@ -160,9 +160,11 @@ function AppAutenticado({ session }: { session: Session }) {
     dataVencimento: string;
   }) {
     try {
+      setErro(null);
       await adicionarDivida(dados);
-    } catch {
-      setErro("Erro ao adicionar dívida.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro ao adicionar dívida.";
+      setErro(msg);
     }
   }
 
@@ -279,6 +281,7 @@ function AppAutenticado({ session }: { session: Session }) {
             devedores={devedores}
             carregando={carregando}
             erro={erro}
+            token={token}
           />
         )}
 

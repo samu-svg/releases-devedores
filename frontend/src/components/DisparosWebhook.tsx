@@ -1,10 +1,12 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Devedor as DevedorApi } from "../App";
+import { API_URL } from "../lib/api";
 
 interface Devedor {
   id: number;
   devedor: string;
   cpfCnpj?: string;
+  telefone?: string | null;
   valorOriginal: number;
   saldoDevedor: number;
   diasAtraso: number;
@@ -25,6 +27,7 @@ interface Props {
   devedores: DevedorApi[];
   carregando: boolean;
   erro: string | null;
+  token: string;
 }
 
 function flattenDevedores(data: DevedorApi[]): Devedor[] {
@@ -33,6 +36,7 @@ function flattenDevedores(data: DevedorApi[]): Devedor[] {
       id: d.id,
       devedor: dev.nome,
       cpfCnpj: dev.cpfCnpj,
+      telefone: dev.telefone,
       valorOriginal: d.valorOriginal,
       saldoDevedor: d.saldoDevedor,
       diasAtraso: d.diasAtraso,
@@ -42,28 +46,65 @@ function flattenDevedores(data: DevedorApi[]): Devedor[] {
   );
 }
 
-async function dispararWebhook(webhookUrl: string, devedor: Devedor): Promise<void> {
-  const payload = {
-    id: devedor.id,
-    nome: devedor.devedor,
-    cpfCnpj: devedor.cpfCnpj ?? "",
-    saldoDevedor: devedor.saldoDevedor,
-    valorOriginal: devedor.valorOriginal,
-    diasAtraso: devedor.diasAtraso,
-    dataVencimento: devedor.dataVencimento,
-    status: devedor.status,
-    timestamp: new Date().toISOString(),
-  };
+function normalizarTelefone(telefone: string | null | undefined): string | null {
+  if (!telefone?.trim()) return null;
+  const digits = telefone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  return digits.startsWith("55") ? digits : `55${digits}`;
+}
 
-  const res = await fetch(webhookUrl, {
+function pareceTelefone(valor: string): boolean {
+  const digits = valor.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 15;
+}
+
+function obterTelefone(devedor: Devedor): string | null {
+  const tel = normalizarTelefone(devedor.telefone);
+  if (tel) return tel;
+  if (devedor.cpfCnpj && pareceTelefone(devedor.cpfCnpj)) {
+    return normalizarTelefone(devedor.cpfCnpj);
+  }
+  return null;
+}
+
+function montarPayloadBotConversa(devedor: Devedor): Record<string, string | number> {
+  const phone = obterTelefone(devedor);
+  if (!phone) {
+    throw new Error(`Telefone não cadastrado para "${devedor.devedor}"`);
+  }
+
+  return {
+    name: devedor.devedor,
+    phone,
+    "customFields dias atraso": devedor.diasAtraso,
+    "customFields valor divida": devedor.saldoDevedor.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }),
+    "customFields data vencimento": devedor.dataVencimento,
+  };
+}
+
+async function dispararWebhook(token: string, webhookUrl: string, devedor: Devedor): Promise<void> {
+  const payload = montarPayloadBotConversa(devedor);
+
+  const res = await fetch(`${API_URL}/webhook/disparar`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ webhookUrl, payload }),
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.erro ?? `Falha ao enviar (HTTP ${res.status})`);
+  }
+
+  const body = await res.json().catch(() => null);
+  if (body && body.ok === false) {
+    throw new Error(body.erro ?? "Erro ao enviar webhook");
   }
 }
 
@@ -78,7 +119,7 @@ function formatarData(iso: string) {
   });
 }
 
-export default function DisparosWebhook({ devedores: devedoresApi, carregando, erro }: Props) {
+export default function DisparosWebhook({ devedores: devedoresApi, carregando, erro, token }: Props) {
   const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("webhook_url") ?? "");
   const [urlSalva, setUrlSalva] = useState(() => !!localStorage.getItem("webhook_url"));
   const devedores = useMemo(() => flattenDevedores(devedoresApi), [devedoresApi]);
@@ -159,7 +200,7 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
       });
 
       try {
-        await dispararWebhook(webhookUrl.trim(), d);
+        await dispararWebhook(token, webhookUrl.trim(), d);
         setRegistros((prev) => {
           const n = new Map(prev);
           const atual = n.get(d.id)!;
@@ -180,7 +221,7 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
     }
 
     setDisparando(false);
-  }, [webhookUrl, devedores, selecionados]);
+  }, [webhookUrl, devedores, selecionados, token]);
 
   const totalAtrasados = devedores.filter((d) => d.status === "atrasado").length;
   const totalSucesso = [...registros.values()].filter((r) => r.ultimoStatus === "sucesso").length;
@@ -217,7 +258,10 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
             {urlSalva ? "✓ Salvo" : "Salvar"}
           </button>
         </div>
-        <p className="webhook-hint">O sistema enviará um POST com os dados do devedor para esta URL.</p>
+        <p className="webhook-hint">
+          Formato BotConversa: name, phone e customFields (dias atraso, valor divida, data vencimento).
+          O devedor precisa ter telefone cadastrado.
+        </p>
       </div>
 
       <div className="barra-acoes">

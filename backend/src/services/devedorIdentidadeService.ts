@@ -45,7 +45,7 @@ export async function findOrCreateDevedorPorNome(
 
   const existente = existentes?.[0];
   const cpfLimpo = (cpfCnpj ?? "").trim();
-  const cpfArmazenar = cpfLimpo || "-";
+  const cpfArmazenar = cpfLimpo || chave;
 
   if (existente) {
     const updates: Record<string, string> = { nome: chave };
