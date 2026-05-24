@@ -1890,6 +1890,13 @@ tbody tr:hover {
   border-color: #bbf7d0;
 }
 
+.chip-cobrado {
+  background: #eff6ff;
+  color: var(--cor-primaria);
+  border-color: #bfdbfe;
+  font-weight: 600;
+}
+
 .btn-sm {
   padding: 4px 12px;
   font-size: 0.78rem;
@@ -2367,6 +2374,22 @@ tbody tr:hover {
 .tabela-devedores .linha:hover { background: var(--cor-fundo); }
 .tabela-devedores .linha.selecionada { background: var(--cor-primaria-clara); }
 .tabela-devedores .linha.linha-erro { background: #fef2f2; }
+.tabela-devedores .linha.linha-cobrado { background: #f8fbff; }
+
+.badge-cobrado {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #eff6ff;
+  color: var(--cor-primaria);
+  border: 1px solid #bfdbfe;
+}
+
+.tabela-devedores .col-cobranca { text-align: center; }
 
 .tabela-devedores .col-nome { font-weight: 600; }
 .tabela-devedores .col-cpf { font-family: monospace; font-size: 0.82rem; color: var(--cor-texto-secundario); }

@@ -55,6 +55,28 @@ export async function listarComDividas(
     dividasPorDevedor.set(d.devedor_id, lista);
   }
 
+  const { data: cobrancasRaw } = await supabase
+    .from("cobrancas_disparadas")
+    .select("devedor_id, total_envios, ultimo_envio_em, ultimo_status, ultimo_erro");
+
+  const cobrancasPorDevedor = new Map<
+    number,
+    {
+      totalEnvios: number;
+      ultimoEnvio: string | null;
+      ultimoStatus: "sucesso" | "erro" | null;
+      ultimoErro: string | null;
+    }
+  >();
+  for (const c of cobrancasRaw ?? []) {
+    cobrancasPorDevedor.set(c.devedor_id, {
+      totalEnvios: c.total_envios,
+      ultimoEnvio: c.ultimo_envio_em,
+      ultimoStatus: c.ultimo_status,
+      ultimoErro: c.ultimo_erro,
+    });
+  }
+
   const resultado: DevedorComDividas[] = [];
 
   for (const dev of devedores) {
@@ -108,6 +130,7 @@ export async function listarComDividas(
       saldoTotal: Math.round((saldoTotal || 0) * 100) / 100,
       qtdDividas: dividas.length,
       qtdAtrasadas,
+      cobranca: cobrancasPorDevedor.get(dev.id),
       dividas,
     });
   }

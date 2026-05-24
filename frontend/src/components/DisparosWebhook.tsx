@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Devedor as DevedorApi } from "../App";
 import { API_URL } from "../lib/api";
 import { saldoDevedorSemJuros } from "../lib/saldo";
@@ -13,15 +13,20 @@ interface Devedor {
   diasAtraso: number;
   status: "atrasado" | "pendente" | "pago";
   dataVencimento: string;
+  cobranca?: {
+    totalEnvios: number;
+    ultimoEnvio: string | null;
+    ultimoStatus: "sucesso" | "erro" | null;
+    ultimoErro: string | null;
+  };
 }
 
 interface RegistroDisparo {
   devedorId: number;
-  nomeDevedor: string;
-  tentativas: number;
+  totalEnvios: number;
   ultimoStatus: "sucesso" | "erro" | "enviando";
-  ultimoEnvio: string;
-  erro?: string;
+  ultimoEnvio: string | null;
+  ultimoErro?: string;
 }
 
 interface Props {
@@ -29,6 +34,7 @@ interface Props {
   carregando: boolean;
   erro: string | null;
   token: string;
+  onAtualizar?: () => void;
 }
 
 function agruparPorDevedor(data: DevedorApi[]): Devedor[] {
@@ -55,6 +61,7 @@ function agruparPorDevedor(data: DevedorApi[]): Devedor[] {
       diasAtraso,
       status,
       dataVencimento,
+      cobranca: dev.cobranca,
     };
   });
 }
@@ -98,7 +105,11 @@ function montarPayloadBotConversa(devedor: Devedor): Record<string, string | num
   };
 }
 
-async function dispararWebhook(token: string, webhookUrl: string, devedor: Devedor): Promise<void> {
+async function dispararWebhook(
+  token: string,
+  webhookUrl: string,
+  devedor: Devedor
+): Promise<RegistroDisparo> {
   const payload = montarPayloadBotConversa(devedor);
 
   const res = await fetch(`${API_URL}/webhook/disparar`, {
@@ -107,18 +118,37 @@ async function dispararWebhook(token: string, webhookUrl: string, devedor: Deved
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ webhookUrl, payload }),
+    body: JSON.stringify({ webhookUrl, payload, devedorId: devedor.id }),
   });
 
+  const body = await res.json().catch(() => null);
+
   if (!res.ok) {
-    const body = await res.json().catch(() => null);
     throw new Error(body?.erro ?? `Falha ao enviar (HTTP ${res.status})`);
   }
 
-  const body = await res.json().catch(() => null);
   if (body && body.ok === false) {
     throw new Error(body.erro ?? "Erro ao enviar webhook");
   }
+
+  const cobranca = body?.cobranca;
+  return {
+    devedorId: devedor.id,
+    totalEnvios: cobranca?.totalEnvios ?? 0,
+    ultimoStatus: "sucesso",
+    ultimoEnvio: cobranca?.ultimoEnvio ?? new Date().toISOString(),
+  };
+}
+
+function cobrancaParaRegistro(devedorId: number, cobranca?: Devedor["cobranca"]): RegistroDisparo | null {
+  if (!cobranca) return null;
+  return {
+    devedorId,
+    totalEnvios: cobranca.totalEnvios,
+    ultimoStatus: cobranca.ultimoStatus === "erro" ? "erro" : "sucesso",
+    ultimoEnvio: cobranca.ultimoEnvio,
+    ultimoErro: cobranca.ultimoErro ?? undefined,
+  };
 }
 
 function formatarMoeda(v: number) {
@@ -132,21 +162,43 @@ function formatarData(iso: string) {
   });
 }
 
-export default function DisparosWebhook({ devedores: devedoresApi, carregando, erro, token }: Props) {
+export default function DisparosWebhook({ devedores: devedoresApi, carregando, erro, token, onAtualizar }: Props) {
   const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("webhook_url") ?? "");
   const [urlSalva, setUrlSalva] = useState(() => !!localStorage.getItem("webhook_url"));
   const devedores = useMemo(() => agruparPorDevedor(devedoresApi), [devedoresApi]);
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
-  const [filtroStatus, setFiltroStatus] = useState<"todos" | "atrasado">("atrasado");
+  const [filtroStatus, setFiltroStatus] = useState<"atrasado" | "todos" | "nao_cobrados" | "cobrados">("atrasado");
   const [busca, setBusca] = useState("");
   const [registros, setRegistros] = useState<Map<number, RegistroDisparo>>(new Map());
   const [disparando, setDisparando] = useState(false);
   const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
 
+  useEffect(() => {
+    const map = new Map<number, RegistroDisparo>();
+    for (const d of devedores) {
+      const reg = cobrancaParaRegistro(d.id, d.cobranca);
+      if (reg) map.set(d.id, reg);
+    }
+    setRegistros(map);
+  }, [devedores]);
+
   const devedoresFiltrados = devedores.filter((d) => {
-    const matchStatus = filtroStatus === "todos" ? true : d.status === "atrasado";
-    const matchBusca = busca.trim() === "" || d.devedor.toLowerCase().includes(busca.toLowerCase());
-    return matchStatus && matchBusca;
+    const totalEnvios = registros.get(d.id)?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0;
+    const cobrado = totalEnvios > 0;
+    const matchBusca =
+      busca.trim() === "" || d.devedor.toLowerCase().includes(busca.toLowerCase());
+    if (!matchBusca) return false;
+
+    switch (filtroStatus) {
+      case "atrasado":
+        return d.status === "atrasado";
+      case "cobrados":
+        return cobrado;
+      case "nao_cobrados":
+        return !cobrado;
+      default:
+        return true;
+    }
   });
 
   const toggleSelecionado = (id: number) => {
@@ -201,11 +253,9 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
 
       setRegistros((prev) => {
         const n = new Map(prev);
-        const atual = n.get(d.id);
         n.set(d.id, {
           devedorId: d.id,
-          nomeDevedor: d.devedor,
-          tentativas: (atual?.tentativas ?? 0) + 1,
+          totalEnvios: n.get(d.id)?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0,
           ultimoStatus: "enviando",
           ultimoEnvio: new Date().toISOString(),
         });
@@ -213,19 +263,24 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
       });
 
       try {
-        await dispararWebhook(token, webhookUrl.trim(), d);
+        const registro = await dispararWebhook(token, webhookUrl.trim(), d);
         setRegistros((prev) => {
           const n = new Map(prev);
-          const atual = n.get(d.id)!;
-          n.set(d.id, { ...atual, ultimoStatus: "sucesso", erro: undefined });
+          n.set(d.id, registro);
           return n;
         });
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         setRegistros((prev) => {
           const n = new Map(prev);
-          const atual = n.get(d.id)!;
-          n.set(d.id, { ...atual, ultimoStatus: "erro", erro: msg });
+          const atual = n.get(d.id);
+          n.set(d.id, {
+            devedorId: d.id,
+            totalEnvios: atual?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0,
+            ultimoStatus: "erro",
+            ultimoEnvio: new Date().toISOString(),
+            ultimoErro: msg,
+          });
           return n;
         });
       }
@@ -234,10 +289,11 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
     }
 
     setDisparando(false);
-  }, [webhookUrl, devedores, selecionados, token]);
+    onAtualizar?.();
+  }, [webhookUrl, devedores, selecionados, token, onAtualizar]);
 
   const totalAtrasados = devedores.filter((d) => d.status === "atrasado").length;
-  const totalSucesso = [...registros.values()].filter((r) => r.ultimoStatus === "sucesso").length;
+  const totalCobrados = devedores.filter((d) => (registros.get(d.id)?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0) > 0).length;
   const totalErro = [...registros.values()].filter((r) => r.ultimoStatus === "erro").length;
 
   return (
@@ -259,7 +315,7 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
         </div>
         <div className="header-stats">
           <div className="stat-pill atrasado"><span>{totalAtrasados}</span><label>Atrasados</label></div>
-          <div className="stat-pill sucesso"><span>{totalSucesso}</span><label>Enviados</label></div>
+          <div className="stat-pill sucesso"><span>{totalCobrados}</span><label>Cobrados</label></div>
           <div className="stat-pill erro"><span>{totalErro}</span><label>Erros</label></div>
         </div>
       </div>
@@ -287,7 +343,9 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
       <div className="barra-acoes">
         <div className="barra-esquerda">
           <div className="filtro-tabs">
-            <button className={`tab ${filtroStatus === "atrasado" ? "ativa" : ""}`} onClick={() => setFiltroStatus("atrasado")}>Somente atrasados</button>
+            <button className={`tab ${filtroStatus === "atrasado" ? "ativa" : ""}`} onClick={() => setFiltroStatus("atrasado")}>Atrasados</button>
+            <button className={`tab ${filtroStatus === "nao_cobrados" ? "ativa" : ""}`} onClick={() => setFiltroStatus("nao_cobrados")}>Não cobrados</button>
+            <button className={`tab ${filtroStatus === "cobrados" ? "ativa" : ""}`} onClick={() => setFiltroStatus("cobrados")}>Cobrados</button>
             <button className={`tab ${filtroStatus === "todos" ? "ativa" : ""}`} onClick={() => setFiltroStatus("todos")}>Todos</button>
           </div>
           <input className="busca-input" type="text" placeholder="Buscar devedor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
@@ -325,20 +383,23 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
                 <th>CPF/CNPJ</th>
                 <th>Saldo Devedor</th>
                 <th>Dias Atraso</th>
-                <th>Status</th>
-                <th>Disparos</th>
-                <th>Último Envio</th>
+                <th>Status dívida</th>
+                <th>Cobrança</th>
+                <th>Envios</th>
+                <th>Último envio</th>
                 <th>Situação</th>
               </tr>
             </thead>
             <tbody>
               {devedoresFiltrados.map((d) => {
                 const reg = registros.get(d.id);
+                const totalEnvios = reg?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0;
+                const cobrado = totalEnvios > 0;
                 const selecionado = selecionados.has(d.id);
                 return (
                   <tr
                     key={d.id}
-                    className={`linha ${selecionado ? "selecionada" : ""} ${reg?.ultimoStatus === "erro" ? "linha-erro" : ""}`}
+                    className={`linha ${selecionado ? "selecionada" : ""} ${reg?.ultimoStatus === "erro" ? "linha-erro" : ""} ${cobrado ? "linha-cobrado" : ""}`}
                     onClick={() => toggleSelecionado(d.id)}
                   >
                     <td className="col-check">
@@ -355,17 +416,35 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
                         {d.status === "atrasado" ? "Atrasado" : d.status === "pendente" ? "Pendente" : "Pago"}
                       </span>
                     </td>
-                    <td className="col-tentativas">
-                      {reg ? (
-                        <span className={`badge-tentativas ${reg.ultimoStatus === "erro" ? "erro" : "ok"}`}>{reg.tentativas}×</span>
-                      ) : <span className="col-vazio">—</span>}
+                    <td className="col-cobranca">
+                      {cobrado ? (
+                        <span className="badge-cobrado">Cobrado</span>
+                      ) : (
+                        <span className="col-vazio">—</span>
+                      )}
                     </td>
-                    <td className="col-envio">{reg ? formatarData(reg.ultimoEnvio) : "—"}</td>
+                    <td className="col-tentativas">
+                      {totalEnvios > 0 ? (
+                        <span className="badge-tentativas ok">{totalEnvios}×</span>
+                      ) : (
+                        <span className="col-vazio">0</span>
+                      )}
+                    </td>
+                    <td className="col-envio">
+                      {reg?.ultimoEnvio ?? d.cobranca?.ultimoEnvio
+                        ? formatarData(reg?.ultimoEnvio ?? d.cobranca!.ultimoEnvio!)
+                        : "—"}
+                    </td>
                     <td className="col-situacao">
-                      {!reg ? <span className="situacao-aguardando">Aguardando</span>
-                        : reg.ultimoStatus === "enviando" ? <span className="situacao-enviando"><span className="dot-pulse" /> Enviando…</span>
-                        : reg.ultimoStatus === "sucesso" ? <span className="situacao-sucesso">✓ Enviado</span>
-                        : <span className="situacao-erro" title={reg.erro}>✗ Erro ao enviar</span>}
+                      {reg?.ultimoStatus === "enviando" ? (
+                        <span className="situacao-enviando"><span className="dot-pulse" /> Enviando…</span>
+                      ) : reg?.ultimoStatus === "erro" ? (
+                        <span className="situacao-erro" title={reg.ultimoErro}>✗ Erro</span>
+                      ) : cobrado ? (
+                        <span className="situacao-sucesso">✓ Enviado</span>
+                      ) : (
+                        <span className="situacao-aguardando">Aguardando</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -379,9 +458,12 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
         <div className="painel-erros">
           <h4>⚠️ Erros de envio</h4>
           <ul>
-            {[...registros.values()].filter((r) => r.ultimoStatus === "erro").map((r) => (
-              <li key={r.devedorId}><strong>{r.nomeDevedor}</strong> — Erro ao enviar{r.erro ? `: ${r.erro}` : ""}</li>
-            ))}
+            {[...registros.values()].filter((r) => r.ultimoStatus === "erro").map((r) => {
+              const nome = devedores.find((d) => d.id === r.devedorId)?.devedor ?? `#${r.devedorId}`;
+              return (
+                <li key={r.devedorId}><strong>{nome}</strong> — Erro ao enviar{r.ultimoErro ? `: ${r.ultimoErro}` : ""}</li>
+              );
+            })}
           </ul>
         </div>
       )}

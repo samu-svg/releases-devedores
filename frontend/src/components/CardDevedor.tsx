@@ -92,6 +92,11 @@ export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida,
               {devedor.qtdAtrasadas} atrasada{devedor.qtdAtrasadas !== 1 ? "s" : ""}
             </span>
           )}
+          {(devedor.cobranca?.totalEnvios ?? 0) > 0 && (
+            <span className="chip chip-cobrado">
+              Cobrado {devedor.cobranca!.totalEnvios}×
+            </span>
+          )}
           {qtdPagas > 0 && (
             <span className="chip chip-sucesso">
               {qtdPagas} paga{qtdPagas !== 1 ? "s" : ""}

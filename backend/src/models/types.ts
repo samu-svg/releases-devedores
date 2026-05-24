@@ -104,6 +104,13 @@ export interface DividaResumida {
   status: StatusDivida;
 }
 
+export interface CobrancaDisparadaResumo {
+  totalEnvios: number;
+  ultimoEnvio: string | null;
+  ultimoStatus: "sucesso" | "erro" | null;
+  ultimoErro: string | null;
+}
+
 export interface DevedorComDividas {
   id: number;
   nome: string;
@@ -116,6 +123,7 @@ export interface DevedorComDividas {
   saldoTotal: number;
   qtdDividas: number;
   qtdAtrasadas: number;
+  cobranca?: CobrancaDisparadaResumo;
   dividas: DividaResumida[];
 }
 

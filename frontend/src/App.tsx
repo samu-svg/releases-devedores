@@ -25,6 +25,13 @@ export interface DividaResumida {
   status: "pendente" | "pago" | "atrasado";
 }
 
+export interface CobrancaDisparadaResumo {
+  totalEnvios: number;
+  ultimoEnvio: string | null;
+  ultimoStatus: "sucesso" | "erro" | null;
+  ultimoErro: string | null;
+}
+
 export interface Devedor {
   id: number;
   nome: string;
@@ -37,6 +44,7 @@ export interface Devedor {
   saldoTotal: number;
   qtdDividas: number;
   qtdAtrasadas: number;
+  cobranca?: CobrancaDisparadaResumo;
   dividas: DividaResumida[];
 }
 
@@ -310,6 +318,7 @@ function AppAutenticado({ session }: { session: Session }) {
             carregando={carregando}
             erro={erro}
             token={token}
+            onAtualizar={carregarDevedores}
           />
         )}
 
