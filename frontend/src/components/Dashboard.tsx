@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Devedor, DividaResumida } from "../App";
 import CardKPI from "./CardKPI";
 
@@ -6,8 +7,19 @@ interface Props {
   carregando: boolean;
 }
 
+type DividaComDevedor = DividaResumida & { nomeDevedor: string };
+
 function fmt(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function parseData(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function inicioDoDia(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 function IconeDevedores() {
@@ -28,25 +40,6 @@ function IconeDividas() {
       <polyline points="14 2 14 8 20 8" />
       <line x1="16" y1="13" x2="8" y2="13" />
       <line x1="16" y1="17" x2="8" y2="17" />
-    </svg>
-  );
-}
-
-function IconeDinheiro() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </svg>
-  );
-}
-
-function IconeAlerta() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   );
 }
@@ -79,148 +72,384 @@ function IconePorcento() {
   );
 }
 
+function IconeRelogio() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
 export default function Dashboard({ devedores, carregando }: Props) {
+  const metricas = useMemo(() => {
+    const hoje = inicioDoDia(new Date());
+    const em7dias = new Date(hoje.getTime() + 7 * 86400000);
+
+    const todasDividas: DividaComDevedor[] = devedores.flatMap((dev) =>
+      dev.dividas.map((d) => ({ ...d, nomeDevedor: dev.nome }))
+    );
+
+    const totalDevedores = devedores.length;
+    const totalDividas = todasDividas.length;
+    const totalOriginal = devedores.reduce((s, d) => s + d.totalOriginal, 0);
+    const totalJuros = devedores.reduce((s, d) => s + d.totalJuros, 0);
+    const totalPago = devedores.reduce((s, d) => s + d.totalPago, 0);
+    const saldoTotal = devedores.reduce((s, d) => s + d.saldoTotal, 0);
+
+    const dividasAtrasadas = todasDividas.filter((d) => d.status === "atrasado");
+    const dividasPendentes = todasDividas.filter((d) => d.status === "pendente");
+    const dividasPagas = todasDividas.filter((d) => d.status === "pago");
+
+    const saldoAtrasado = dividasAtrasadas.reduce((s, d) => s + d.saldoDevedor, 0);
+    const saldoPendente = dividasPendentes.reduce((s, d) => s + d.saldoDevedor, 0);
+
+    const devedoresInadimplentes = devedores.filter((d) => d.qtdAtrasadas > 0).length;
+    const taxaInadimplencia =
+      totalDevedores > 0 ? Math.round((devedoresInadimplentes / totalDevedores) * 100) : 0;
+
+    const carteiraTotal = totalPago + saldoTotal;
+    const taxaRecuperacao = carteiraTotal > 0 ? Math.round((totalPago / carteiraTotal) * 100) : 0;
+
+    const maiorAtraso = dividasAtrasadas.length > 0
+      ? Math.max(...dividasAtrasadas.map((d) => d.diasAtraso))
+      : 0;
+
+    const faixasAtraso = [
+      { label: "1–30 dias", min: 1, max: 30, cor: "faixa-leve" },
+      { label: "31–60 dias", min: 31, max: 60, cor: "faixa-media" },
+      { label: "61–90 dias", min: 61, max: 90, cor: "faixa-alta" },
+      { label: "90+ dias", min: 91, max: Infinity, cor: "faixa-critica" },
+    ].map((faixa) => {
+      const itens = dividasAtrasadas.filter(
+        (d) => d.diasAtraso >= faixa.min && d.diasAtraso <= faixa.max
+      );
+      return {
+        ...faixa,
+        qtd: itens.length,
+        saldo: itens.reduce((s, d) => s + d.saldoDevedor, 0),
+      };
+    });
+
+    const topSaldos = [...devedores].sort((a, b) => b.saldoTotal - a.saldoTotal).slice(0, 5);
+
+    const topAtrasados = devedores
+      .filter((d) => d.qtdAtrasadas > 0)
+      .map((dev) => {
+        const atrasadas = dev.dividas.filter((d) => d.status === "atrasado");
+        return {
+          ...dev,
+          saldoAtrasado: atrasadas.reduce((s, d) => s + d.saldoDevedor, 0),
+          maxDias: Math.max(...atrasadas.map((d) => d.diasAtraso)),
+        };
+      })
+      .sort((a, b) => b.saldoAtrasado - a.saldoAtrasado)
+      .slice(0, 5);
+
+    const vencendoBreve = todasDividas
+      .filter((d) => {
+        if (d.status === "pago") return false;
+        const venc = inicioDoDia(parseData(d.dataVencimento));
+        return venc >= hoje && venc <= em7dias;
+      })
+      .sort((a, b) => parseData(a.dataVencimento).getTime() - parseData(b.dataVencimento).getTime())
+      .slice(0, 8);
+
+    const pioresDividas = [...dividasAtrasadas]
+      .sort((a, b) => b.diasAtraso - a.diasAtraso || b.saldoDevedor - a.saldoDevedor)
+      .slice(0, 8);
+
+    const totalBarra = dividasPagas.length + dividasPendentes.length + dividasAtrasadas.length || 1;
+
+    return {
+      hoje,
+      totalDevedores,
+      totalDividas,
+      totalOriginal,
+      totalJuros,
+      totalPago,
+      saldoTotal,
+      saldoAtrasado,
+      saldoPendente,
+      devedoresInadimplentes,
+      taxaInadimplencia,
+      taxaRecuperacao,
+      maiorAtraso,
+      faixasAtraso,
+      topSaldos,
+      topAtrasados,
+      vencendoBreve,
+      pioresDividas,
+      pagas: dividasPagas.length,
+      pendentes: dividasPendentes.length,
+      atrasadas: dividasAtrasadas.length,
+      pctPagas: (dividasPagas.length / totalBarra) * 100,
+      pctPendentes: (dividasPendentes.length / totalBarra) * 100,
+      pctAtrasadas: (dividasAtrasadas.length / totalBarra) * 100,
+      saldoPagas: dividasPagas.reduce((s, d) => s + d.saldoDevedor, 0),
+      vazio: totalDevedores === 0,
+    };
+  }, [devedores]);
+
   if (carregando) {
-    return <p className="loading">Carregando dashboard...</p>;
+    return (
+      <div className="dashboard-estado">
+        <div className="dashboard-spinner" />
+        <p>Carregando dashboard…</p>
+      </div>
+    );
   }
 
-  const todasDividas: (DividaResumida & { nomeDevedor: string })[] = devedores.flatMap(
-    (dev) => dev.dividas.map((d) => ({ ...d, nomeDevedor: dev.nome }))
-  );
-
-  const totalDevedores = devedores.length;
-  const totalDividas = todasDividas.length;
-  const totalOriginal = devedores.reduce((s, d) => s + d.totalOriginal, 0);
-  const totalJuros = devedores.reduce((s, d) => s + d.totalJuros, 0);
-  const totalPago = devedores.reduce((s, d) => s + d.totalPago, 0);
-  const saldoTotal = devedores.reduce((s, d) => s + d.saldoTotal, 0);
-  const totalAtrasadas = devedores.reduce((s, d) => s + d.qtdAtrasadas, 0);
-
-  const pagas = todasDividas.filter((d) => d.status === "pago").length;
-  const pendentes = todasDividas.filter((d) => d.status === "pendente").length;
-  const atrasadas = todasDividas.filter((d) => d.status === "atrasado").length;
-
-  const devedoresInadimplentes = devedores.filter((d) => d.qtdAtrasadas > 0).length;
-  const taxaInadimplencia =
-    totalDevedores > 0 ? Math.round((devedoresInadimplentes / totalDevedores) * 100) : 0;
-
-  const top5 = [...devedores].sort((a, b) => b.saldoTotal - a.saldoTotal).slice(0, 5);
-
-  const hoje = new Date();
-  const em7dias = new Date(hoje.getTime() + 7 * 86400000);
-  const vencendoBreve = todasDividas
-    .filter((d) => d.status !== "pago" && new Date(d.dataVencimento) <= em7dias && new Date(d.dataVencimento) >= hoje)
-    .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())
-    .slice(0, 8);
-
-  const totalBarra = pagas + pendentes + atrasadas || 1;
-  const pctPagas = (pagas / totalBarra) * 100;
-  const pctPendentes = (pendentes / totalBarra) * 100;
-  const pctAtrasadas = (atrasadas / totalBarra) * 100;
+  if (metricas.vazio) {
+    return (
+      <div className="dashboard">
+        <div className="dashboard-header">
+          <div>
+            <h2 className="dashboard-titulo">Dashboard</h2>
+            <p className="dashboard-subtitulo">Visão geral da carteira de cobrança</p>
+          </div>
+        </div>
+        <div className="dashboard-estado">
+          <span className="dashboard-estado-icone">📊</span>
+          <p>Nenhum devedor cadastrado ainda.</p>
+          <p className="dashboard-estado-dica">Cadastre dívidas na aba Devedores para ver os indicadores.</p>
+        </div>
+      </div>
+    );
+  }
 
   function diasAte(iso: string): number {
-    const diff = new Date(iso).getTime() - hoje.getTime();
+    const diff = inicioDoDia(parseData(iso)).getTime() - metricas.hoje.getTime();
     return Math.ceil(diff / 86400000);
   }
 
+  const maxFaixaSaldo = Math.max(...metricas.faixasAtraso.map((f) => f.saldo), 1);
+
   return (
     <div className="dashboard">
-      <h2 className="dashboard-titulo">Dashboard</h2>
+      <div className="dashboard-header">
+        <div>
+          <h2 className="dashboard-titulo">Dashboard</h2>
+          <p className="dashboard-subtitulo">
+            {metricas.totalDevedores} devedores · {metricas.totalDividas} dívidas · atualizado agora
+          </p>
+        </div>
+        <div className="dashboard-recuperacao">
+          <span className="dashboard-recuperacao-label">Taxa de recuperação</span>
+          <div className="dashboard-recuperacao-barra">
+            <div className="dashboard-recuperacao-fill" style={{ width: `${metricas.taxaRecuperacao}%` }} />
+          </div>
+          <span className="dashboard-recuperacao-valor">{metricas.taxaRecuperacao}% · {fmt(metricas.totalPago)} recebido</span>
+        </div>
+      </div>
 
-      <div className="kpi-grid">
-        <CardKPI titulo="Devedores" valor={String(totalDevedores)} icone={<IconeDevedores />} />
-        <CardKPI titulo="Dívidas" valor={String(totalDividas)} icone={<IconeDividas />} cor="info" />
-        <CardKPI titulo="Valor Original" valor={fmt(totalOriginal)} icone={<IconeDinheiro />} />
-        <CardKPI titulo="Saldo Devedor" valor={fmt(saldoTotal)} icone={<IconeDinheiro />} cor="perigo" subtexto="Com juros" />
+      <div className="dashboard-hero">
+        <div className="hero-card hero-aberto">
+          <span className="hero-label">Saldo em aberto</span>
+          <strong className="hero-valor">{fmt(metricas.saldoTotal)}</strong>
+          <span className="hero-detalhe">Original {fmt(metricas.totalOriginal)} + juros {fmt(metricas.totalJuros)}</span>
+        </div>
+        <div className="hero-card hero-atraso">
+          <span className="hero-label">Saldo em atraso</span>
+          <strong className="hero-valor">{fmt(metricas.saldoAtrasado)}</strong>
+          <span className="hero-detalhe">
+            {metricas.atrasadas} dívidas · maior atraso {metricas.maiorAtraso}d
+          </span>
+        </div>
+        <div className="hero-card hero-risco">
+          <span className="hero-label">Devedores inadimplentes</span>
+          <strong className="hero-valor">{metricas.devedoresInadimplentes}</strong>
+          <span className="hero-detalhe">{metricas.taxaInadimplencia}% da carteira · pendente {fmt(metricas.saldoPendente)}</span>
+        </div>
       </div>
 
       <div className="kpi-grid">
-        <CardKPI titulo="Total Recebido" valor={fmt(totalPago)} icone={<IconeCheck />} cor="sucesso" />
-        <CardKPI titulo="Juros Acumulados" valor={fmt(totalJuros)} icone={<IconeJuros />} cor="alerta" />
-        <CardKPI titulo="Dívidas Atrasadas" valor={String(totalAtrasadas)} icone={<IconeAlerta />} cor="perigo" />
-        <CardKPI titulo="Inadimplência" valor={`${taxaInadimplencia}%`} icone={<IconePorcento />} cor={taxaInadimplencia > 50 ? "perigo" : "alerta"} subtexto={`${devedoresInadimplentes} de ${totalDevedores}`} />
+        <CardKPI titulo="Devedores" valor={String(metricas.totalDevedores)} icone={<IconeDevedores />} />
+        <CardKPI titulo="Dívidas" valor={String(metricas.totalDividas)} icone={<IconeDividas />} cor="info" />
+        <CardKPI titulo="Total Recebido" valor={fmt(metricas.totalPago)} icone={<IconeCheck />} cor="sucesso" />
+        <CardKPI titulo="Juros Acumulados" valor={fmt(metricas.totalJuros)} icone={<IconeJuros />} cor="alerta" />
+        <CardKPI
+          titulo="Inadimplência"
+          valor={`${metricas.taxaInadimplencia}%`}
+          icone={<IconePorcento />}
+          cor={metricas.taxaInadimplencia > 50 ? "perigo" : "alerta"}
+          subtexto={`${metricas.devedoresInadimplentes} devedores`}
+        />
+        <CardKPI
+          titulo="A vencer (7 dias)"
+          valor={String(metricas.vencendoBreve.length)}
+          icone={<IconeRelogio />}
+          cor="info"
+          subtexto={metricas.vencendoBreve.length > 0 ? fmt(metricas.vencendoBreve.reduce((s, d) => s + d.saldoDevedor, 0)) : "Nenhuma"}
+        />
       </div>
 
-      <div className="dashboard-secao">
-        <h3>Distribuição por Status</h3>
-        <div className="barra-status-container">
-          <div className="barra-status">
-            {pctPagas > 0 && (
-              <div className="barra-segmento barra-pago" style={{ width: `${pctPagas}%` }} title={`Pagas: ${pagas}`} />
-            )}
-            {pctPendentes > 0 && (
-              <div className="barra-segmento barra-pendente" style={{ width: `${pctPendentes}%` }} title={`Pendentes: ${pendentes}`} />
-            )}
-            {pctAtrasadas > 0 && (
-              <div className="barra-segmento barra-atrasado" style={{ width: `${pctAtrasadas}%` }} title={`Atrasadas: ${atrasadas}`} />
-            )}
+      <div className="dashboard-grid-2col">
+        <div className="dashboard-secao">
+          <h3>Distribuição por status</h3>
+          <div className="barra-status-container">
+            <div className="barra-status barra-status-grande">
+              {metricas.pctPagas > 0 && (
+                <div className="barra-segmento barra-pago" style={{ width: `${metricas.pctPagas}%` }} title={`Pagas: ${metricas.pagas}`} />
+              )}
+              {metricas.pctPendentes > 0 && (
+                <div className="barra-segmento barra-pendente" style={{ width: `${metricas.pctPendentes}%` }} title={`Pendentes: ${metricas.pendentes}`} />
+              )}
+              {metricas.pctAtrasadas > 0 && (
+                <div className="barra-segmento barra-atrasado" style={{ width: `${metricas.pctAtrasadas}%` }} title={`Atrasadas: ${metricas.atrasadas}`} />
+              )}
+            </div>
+            <div className="status-resumo">
+              <div className="status-resumo-item">
+                <span className="legenda-cor legenda-pago" />
+                <div>
+                  <strong>Pagas</strong>
+                  <span>{metricas.pagas} · {fmt(metricas.totalPago)} recebido</span>
+                </div>
+              </div>
+              <div className="status-resumo-item">
+                <span className="legenda-cor legenda-pendente" />
+                <div>
+                  <strong>Pendentes</strong>
+                  <span>{metricas.pendentes} · {fmt(metricas.saldoPendente)}</span>
+                </div>
+              </div>
+              <div className="status-resumo-item">
+                <span className="legenda-cor legenda-atrasado" />
+                <div>
+                  <strong>Atrasadas</strong>
+                  <span>{metricas.atrasadas} · {fmt(metricas.saldoAtrasado)}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="barra-legenda">
-            <span className="legenda-item">
-              <span className="legenda-cor legenda-pago" /> Pagas: {pagas}
-            </span>
-            <span className="legenda-item">
-              <span className="legenda-cor legenda-pendente" /> Pendentes: {pendentes}
-            </span>
-            <span className="legenda-item">
-              <span className="legenda-cor legenda-atrasado" /> Atrasadas: {atrasadas}
-            </span>
-          </div>
+        </div>
+
+        <div className="dashboard-secao">
+          <h3>Envelhecimento do atraso</h3>
+          {metricas.atrasadas === 0 ? (
+            <p className="dashboard-vazio">Nenhuma dívida atrasada no momento.</p>
+          ) : (
+            <ul className="lista-faixas">
+              {metricas.faixasAtraso.map((faixa) => (
+                <li key={faixa.label} className="faixa-item">
+                  <div className="faixa-cabecalho">
+                    <span>{faixa.label}</span>
+                    <span>{faixa.qtd} dívidas · {fmt(faixa.saldo)}</span>
+                  </div>
+                  <div className="faixa-barra">
+                    <div
+                      className={`faixa-barra-fill ${faixa.cor}`}
+                      style={{ width: `${(faixa.saldo / maxFaixaSaldo) * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
       <div className="dashboard-duplo">
         <div className="dashboard-secao">
-          <h3>Top 5 Maiores Saldos</h3>
-          {top5.length === 0 ? (
-            <p className="dashboard-vazio">Nenhum devedor cadastrado.</p>
+          <h3>Top 5 — Maiores saldos</h3>
+          <table className="tabela-top">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Devedor</th>
+                <th>Dívidas</th>
+                <th>Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metricas.topSaldos.map((dev, i) => (
+                <tr key={dev.id}>
+                  <td className="top-rank">{i + 1}</td>
+                  <td>
+                    <span className="top-nome">{dev.nome}</span>
+                    <span className="top-cpf">{dev.cpfCnpj}</span>
+                  </td>
+                  <td>
+                    {dev.qtdDividas}
+                    {dev.qtdAtrasadas > 0 && (
+                      <span className="top-atrasadas"> ({dev.qtdAtrasadas} atr.)</span>
+                    )}
+                  </td>
+                  <td className="valor saldo-devedor">{fmt(dev.saldoTotal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="dashboard-secao">
+          <h3>Top 5 — Maior saldo em atraso</h3>
+          {metricas.topAtrasados.length === 0 ? (
+            <p className="dashboard-vazio">Nenhum devedor inadimplente.</p>
           ) : (
             <table className="tabela-top">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Devedor</th>
-                  <th>Dívidas</th>
-                  <th>Saldo</th>
+                  <th>Atraso</th>
+                  <th>Saldo atrasado</th>
                 </tr>
               </thead>
               <tbody>
-                {top5.map((dev, i) => (
+                {metricas.topAtrasados.map((dev, i) => (
                   <tr key={dev.id}>
                     <td className="top-rank">{i + 1}</td>
                     <td>
                       <span className="top-nome">{dev.nome}</span>
-                      <span className="top-cpf">{dev.cpfCnpj}</span>
+                      <span className="top-cpf">{dev.qtdAtrasadas} dívida(s) atrasada(s)</span>
                     </td>
-                    <td>
-                      {dev.qtdDividas}
-                      {dev.qtdAtrasadas > 0 && (
-                        <span className="top-atrasadas"> ({dev.qtdAtrasadas} atr.)</span>
-                      )}
-                    </td>
-                    <td className="valor saldo-devedor">{fmt(dev.saldoTotal)}</td>
+                    <td><span className="badge-dias-dashboard">{dev.maxDias}d</span></td>
+                    <td className="valor saldo-devedor">{fmt(dev.saldoAtrasado)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </div>
+      </div>
 
+      <div className="dashboard-duplo">
         <div className="dashboard-secao">
-          <h3>Vencendo em 7 dias</h3>
-          {vencendoBreve.length === 0 ? (
-            <p className="dashboard-vazio">Nenhuma dívida vencendo nos próximos 7 dias.</p>
+          <h3>Vencendo nos próximos 7 dias</h3>
+          {metricas.vencendoBreve.length === 0 ? (
+            <p className="dashboard-vazio">Nenhuma dívida vencendo neste período.</p>
           ) : (
             <ul className="lista-vencimentos">
-              {vencendoBreve.map((d) => (
+              {metricas.vencendoBreve.map((d) => (
                 <li key={d.id} className="vencimento-item">
                   <div className="vencimento-info">
                     <span className="vencimento-nome">{d.nomeDevedor}</span>
                     <span className="vencimento-valor">{fmt(d.saldoDevedor)}</span>
                   </div>
-                  <span className="vencimento-prazo">
+                  <span className="vencimento-prazo vencimento-prazo-ok">
                     {diasAte(d.dataVencimento) <= 0 ? "Hoje" : `${diasAte(d.dataVencimento)}d`}
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="dashboard-secao">
+          <h3>Dívidas mais críticas (atraso)</h3>
+          {metricas.pioresDividas.length === 0 ? (
+            <p className="dashboard-vazio">Nenhuma dívida atrasada.</p>
+          ) : (
+            <ul className="lista-vencimentos">
+              {metricas.pioresDividas.map((d) => (
+                <li key={d.id} className="vencimento-item vencimento-item-critico">
+                  <div className="vencimento-info">
+                    <span className="vencimento-nome">{d.nomeDevedor}</span>
+                    <span className="vencimento-valor">{fmt(d.saldoDevedor)}</span>
+                  </div>
+                  <span className="vencimento-prazo">{d.diasAtraso}d atraso</span>
                 </li>
               ))}
             </ul>
