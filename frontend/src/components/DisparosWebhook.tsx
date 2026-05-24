@@ -30,20 +30,32 @@ interface Props {
   token: string;
 }
 
-function flattenDevedores(data: DevedorApi[]): Devedor[] {
-  return data.flatMap((dev) =>
-    (dev.dividas ?? []).map((d) => ({
-      id: d.id,
+function agruparPorDevedor(data: DevedorApi[]): Devedor[] {
+  return data.map((dev) => {
+    const dividas = dev.dividas ?? [];
+    const diasAtraso = dividas.length > 0 ? Math.max(...dividas.map((d) => d.diasAtraso)) : 0;
+    const status: Devedor["status"] = dividas.some((d) => d.status === "atrasado")
+      ? "atrasado"
+      : dividas.some((d) => d.status === "pendente")
+        ? "pendente"
+        : "pago";
+    const dividasAbertas = dividas
+      .filter((d) => d.status !== "pago")
+      .sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+    const dataVencimento = dividasAbertas[0]?.dataVencimento ?? dividas[0]?.dataVencimento ?? "";
+
+    return {
+      id: dev.id,
       devedor: dev.nome,
       cpfCnpj: dev.cpfCnpj,
       telefone: dev.telefone,
-      valorOriginal: d.valorOriginal,
-      saldoDevedor: d.saldoDevedor,
-      diasAtraso: d.diasAtraso,
-      status: d.status,
-      dataVencimento: d.dataVencimento,
-    }))
-  );
+      valorOriginal: dev.totalOriginal,
+      saldoDevedor: dev.saldoTotal,
+      diasAtraso,
+      status,
+      dataVencimento,
+    };
+  });
 }
 
 function normalizarTelefone(telefone: string | null | undefined): string | null {
@@ -122,7 +134,7 @@ function formatarData(iso: string) {
 export default function DisparosWebhook({ devedores: devedoresApi, carregando, erro, token }: Props) {
   const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem("webhook_url") ?? "");
   const [urlSalva, setUrlSalva] = useState(() => !!localStorage.getItem("webhook_url"));
-  const devedores = useMemo(() => flattenDevedores(devedoresApi), [devedoresApi]);
+  const devedores = useMemo(() => agruparPorDevedor(devedoresApi), [devedoresApi]);
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "atrasado">("atrasado");
   const [busca, setBusca] = useState("");
