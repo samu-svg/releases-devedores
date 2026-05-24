@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Devedor as DevedorApi } from "../App";
 import { API_URL } from "../lib/api";
+import { saldoDevedorSemJuros } from "../lib/saldo";
 
 interface Devedor {
   id: number;
@@ -50,7 +51,7 @@ function agruparPorDevedor(data: DevedorApi[]): Devedor[] {
       cpfCnpj: dev.cpfCnpj,
       telefone: dev.telefone,
       valorOriginal: dev.totalOriginal,
-      saldoDevedor: dev.saldoTotal,
+      saldoDevedor: saldoDevedorSemJuros(dev),
       diasAtraso,
       status,
       dataVencimento,

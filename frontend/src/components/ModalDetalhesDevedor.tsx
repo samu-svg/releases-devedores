@@ -1,4 +1,5 @@
 import type { Devedor } from "../App";
+import { saldoDevedorSemJuros } from "../lib/saldo";
 
 interface Props {
   devedor: Devedor;
@@ -68,7 +69,7 @@ export default function ModalDetalhesDevedor({ devedor, onFechar, onRemoverDeved
           )}
           <div className="resumo-item resumo-destaque">
             <span className="resumo-label">Saldo Devedor</span>
-            <span className="resumo-valor">{fmt(devedor.saldoTotal)}</span>
+            <span className="resumo-valor">{fmt(saldoDevedorSemJuros(devedor))}</span>
           </div>
         </div>
 

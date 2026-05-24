@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Devedor, DividaResumida } from "../App";
+import { saldoDividaSemJuros, saldoDevedorSemJuros } from "../lib/saldo";
 import CardKPI from "./CardKPI";
 
 interface Props {
@@ -95,20 +96,21 @@ export default function Dashboard({ devedores, carregando }: Props) {
     const totalOriginal = devedores.reduce((s, d) => s + d.totalOriginal, 0);
     const totalJuros = devedores.reduce((s, d) => s + d.totalJuros, 0);
     const totalPago = devedores.reduce((s, d) => s + d.totalPago, 0);
-    const saldoTotal = devedores.reduce((s, d) => s + d.saldoTotal, 0);
+    const saldoComJuros = devedores.reduce((s, d) => s + d.saldoTotal, 0);
+    const saldoTotal = devedores.reduce((s, d) => s + saldoDevedorSemJuros(d), 0);
 
     const dividasAtrasadas = todasDividas.filter((d) => d.status === "atrasado");
     const dividasPendentes = todasDividas.filter((d) => d.status === "pendente");
     const dividasPagas = todasDividas.filter((d) => d.status === "pago");
 
-    const saldoAtrasado = dividasAtrasadas.reduce((s, d) => s + d.saldoDevedor, 0);
-    const saldoPendente = dividasPendentes.reduce((s, d) => s + d.saldoDevedor, 0);
+    const saldoAtrasado = dividasAtrasadas.reduce((s, d) => s + saldoDividaSemJuros(d), 0);
+    const saldoPendente = dividasPendentes.reduce((s, d) => s + saldoDividaSemJuros(d), 0);
 
     const devedoresInadimplentes = devedores.filter((d) => d.qtdAtrasadas > 0).length;
     const taxaInadimplencia =
       totalDevedores > 0 ? Math.round((devedoresInadimplentes / totalDevedores) * 100) : 0;
 
-    const carteiraTotal = totalPago + saldoTotal;
+    const carteiraTotal = totalPago + saldoComJuros;
     const taxaRecuperacao = carteiraTotal > 0 ? Math.round((totalPago / carteiraTotal) * 100) : 0;
 
     const maiorAtraso = dividasAtrasadas.length > 0
@@ -127,11 +129,14 @@ export default function Dashboard({ devedores, carregando }: Props) {
       return {
         ...faixa,
         qtd: itens.length,
-        saldo: itens.reduce((s, d) => s + d.saldoDevedor, 0),
+        saldo: itens.reduce((s, d) => s + saldoDividaSemJuros(d), 0),
       };
     });
 
-    const topSaldos = [...devedores].sort((a, b) => b.saldoTotal - a.saldoTotal).slice(0, 5);
+    const topSaldos = [...devedores]
+      .map((dev) => ({ ...dev, saldoSemJuros: saldoDevedorSemJuros(dev) }))
+      .sort((a, b) => b.saldoSemJuros - a.saldoSemJuros)
+      .slice(0, 5);
 
     const topAtrasados = devedores
       .filter((d) => d.qtdAtrasadas > 0)
@@ -139,7 +144,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
         const atrasadas = dev.dividas.filter((d) => d.status === "atrasado");
         return {
           ...dev,
-          saldoAtrasado: atrasadas.reduce((s, d) => s + d.saldoDevedor, 0),
+          saldoAtrasado: atrasadas.reduce((s, d) => s + saldoDividaSemJuros(d), 0),
           maxDias: Math.max(...atrasadas.map((d) => d.diasAtraso)),
         };
       })
@@ -156,7 +161,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
       .slice(0, 8);
 
     const pioresDividas = [...dividasAtrasadas]
-      .sort((a, b) => b.diasAtraso - a.diasAtraso || b.saldoDevedor - a.saldoDevedor)
+      .sort((a, b) => b.diasAtraso - a.diasAtraso || saldoDividaSemJuros(b) - saldoDividaSemJuros(a))
       .slice(0, 8);
 
     const totalBarra = dividasPagas.length + dividasPendentes.length + dividasAtrasadas.length || 1;
@@ -169,6 +174,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
       totalJuros,
       totalPago,
       saldoTotal,
+      saldoComJuros,
       saldoAtrasado,
       saldoPendente,
       devedoresInadimplentes,
@@ -247,7 +253,9 @@ export default function Dashboard({ devedores, carregando }: Props) {
         <div className="hero-card hero-aberto">
           <span className="hero-label">Saldo em aberto</span>
           <strong className="hero-valor">{fmt(metricas.saldoTotal)}</strong>
-          <span className="hero-detalhe">Original {fmt(metricas.totalOriginal)} + juros {fmt(metricas.totalJuros)}</span>
+          <span className="hero-detalhe">
+            Sem juros · + juros {fmt(metricas.totalJuros)} = {fmt(metricas.saldoComJuros)} total
+          </span>
         </div>
         <div className="hero-card hero-atraso">
           <span className="hero-label">Saldo em atraso</span>
@@ -280,7 +288,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
           valor={String(metricas.vencendoBreve.length)}
           icone={<IconeRelogio />}
           cor="info"
-          subtexto={metricas.vencendoBreve.length > 0 ? fmt(metricas.vencendoBreve.reduce((s, d) => s + d.saldoDevedor, 0)) : "Nenhuma"}
+          subtexto={metricas.vencendoBreve.length > 0 ? fmt(metricas.vencendoBreve.reduce((s, d) => s + saldoDividaSemJuros(d), 0)) : "Nenhuma"}
         />
       </div>
 
@@ -376,7 +384,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
                       <span className="top-atrasadas"> ({dev.qtdAtrasadas} atr.)</span>
                     )}
                   </td>
-                  <td className="valor saldo-devedor">{fmt(dev.saldoTotal)}</td>
+                  <td className="valor saldo-devedor">{fmt(dev.saldoSemJuros)}</td>
                 </tr>
               ))}
             </tbody>
@@ -426,7 +434,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
                 <li key={d.id} className="vencimento-item">
                   <div className="vencimento-info">
                     <span className="vencimento-nome">{d.nomeDevedor}</span>
-                    <span className="vencimento-valor">{fmt(d.saldoDevedor)}</span>
+                    <span className="vencimento-valor">{fmt(saldoDividaSemJuros(d))}</span>
                   </div>
                   <span className="vencimento-prazo vencimento-prazo-ok">
                     {diasAte(d.dataVencimento) <= 0 ? "Hoje" : `${diasAte(d.dataVencimento)}d`}
@@ -447,7 +455,7 @@ export default function Dashboard({ devedores, carregando }: Props) {
                 <li key={d.id} className="vencimento-item vencimento-item-critico">
                   <div className="vencimento-info">
                     <span className="vencimento-nome">{d.nomeDevedor}</span>
-                    <span className="vencimento-valor">{fmt(d.saldoDevedor)}</span>
+                    <span className="vencimento-valor">{fmt(saldoDividaSemJuros(d))}</span>
                   </div>
                   <span className="vencimento-prazo">{d.diasAtraso}d atraso</span>
                 </li>

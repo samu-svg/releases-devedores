@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Devedor, DividaResumida } from "../App";
+import { saldoDividaSemJuros, saldoDevedorSemJuros } from "../lib/saldo";
 
 interface Props {
   devedor: Devedor;
@@ -57,7 +58,7 @@ export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida,
           )}
           <div className="total-item total-destaque">
             <span className="total-label">Saldo Total</span>
-            <span className="total-valor">{formatarMoeda(devedor.saldoTotal)}</span>
+            <span className="total-valor">{formatarMoeda(saldoDevedorSemJuros(devedor))}</span>
           </div>
           <span className={`seta ${aberto ? "seta-aberta" : ""}`}>&#9662;</span>
         </div>
@@ -144,7 +145,7 @@ export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida,
                   <td className="valor pago">
                     {d.totalPago > 0 ? formatarMoeda(d.totalPago) : "—"}
                   </td>
-                  <td className="valor saldo-devedor">{formatarMoeda(d.saldoDevedor)}</td>
+                  <td className="valor saldo-devedor">{formatarMoeda(saldoDividaSemJuros(d))}</td>
                   <td className="atraso">
                     {d.diasAtraso > 0 ? (
                       <span className="dias-atraso">{d.diasAtraso}d</span>
