@@ -144,7 +144,7 @@ export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida,
               Nenhuma dívida. Clique em &quot;+ Nova Dívida&quot; para adicionar.
             </p>
           ) : (
-          <table>
+          <table className="tabela-empilhada">
             <thead>
               <tr>
                 <th>Vencimento</th>
@@ -160,26 +160,26 @@ export default function CardDevedor({ devedor, onPagar, onRemover, onNovaDivida,
             <tbody>
               {devedor.dividas.map((d) => (
                 <tr key={d.id} className={d.status === "pago" ? "linha-pago" : ""}>
-                  <td>{formatarData(d.dataVencimento)}</td>
-                  <td className="valor">{formatarMoeda(d.valorOriginal)}</td>
-                  <td className="valor juros">
+                  <td data-label="Vencimento">{formatarData(d.dataVencimento)}</td>
+                  <td className="valor" data-label="Valor">{formatarMoeda(d.valorOriginal)}</td>
+                  <td className="valor juros" data-label="Juros">
                     {d.jurosAcumulados > 0 ? formatarMoeda(d.jurosAcumulados) : "—"}
                   </td>
-                  <td className="valor pago">
+                  <td className="valor pago" data-label="Pago">
                     {d.totalPago > 0 ? formatarMoeda(d.totalPago) : "—"}
                   </td>
-                  <td className="valor saldo-devedor">{formatarMoeda(saldoDividaSemJuros(d))}</td>
-                  <td className="atraso">
+                  <td className="valor saldo-devedor" data-label="Saldo">{formatarMoeda(saldoDividaSemJuros(d))}</td>
+                  <td className="atraso" data-label="Atraso">
                     {d.diasAtraso > 0 ? (
                       <span className="dias-atraso">{d.diasAtraso}d</span>
                     ) : (
                       "—"
                     )}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span className={`badge badge-${d.status}`}>{d.status}</span>
                   </td>
-                  <td className="acoes">
+                  <td className="acoes" data-label="Ações">
                     <button
                       className="btn btn-outline btn-sm"
                       onClick={() => onDetalhes(d, devedor.nome)}

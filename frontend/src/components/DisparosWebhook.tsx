@@ -365,7 +365,7 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
         </div>
       )}
 
-      <div className="tabela-wrapper">
+      <div className="disparos-lista-conteudo">
         {carregando ? (
           <div className="estado-vazio"><div className="spinner" /><p>Carregando devedores…</p></div>
         ) : erro ? (
@@ -373,84 +373,136 @@ export default function DisparosWebhook({ devedores: devedoresApi, carregando, e
         ) : devedoresFiltrados.length === 0 ? (
           <div className="estado-vazio"><span>📭</span><p>Nenhum devedor encontrado.</p></div>
         ) : (
-          <table className="tabela-devedores">
-            <thead>
-              <tr>
-                <th className="col-check">
-                  <input type="checkbox" checked={todosFiltradosSelecionados} onChange={toggleTodosFiltrados} />
-                </th>
-                <th>Devedor</th>
-                <th>CPF/CNPJ</th>
-                <th>Saldo Devedor</th>
-                <th>Dias Atraso</th>
-                <th>Status dívida</th>
-                <th>Cobrança</th>
-                <th>Envios</th>
-                <th>Último envio</th>
-                <th>Situação</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className="disparos-tabela-desktop tabela-wrapper">
+              <table className="tabela-devedores">
+                <thead>
+                  <tr>
+                    <th className="col-check">
+                      <input type="checkbox" checked={todosFiltradosSelecionados} onChange={toggleTodosFiltrados} />
+                    </th>
+                    <th>Devedor</th>
+                    <th>CPF/CNPJ</th>
+                    <th>Saldo Devedor</th>
+                    <th>Dias Atraso</th>
+                    <th>Status dívida</th>
+                    <th>Cobrança</th>
+                    <th>Envios</th>
+                    <th>Último envio</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devedoresFiltrados.map((d) => {
+                    const reg = registros.get(d.id);
+                    const totalEnvios = reg?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0;
+                    const cobrado = totalEnvios > 0;
+                    const selecionado = selecionados.has(d.id);
+                    return (
+                      <tr
+                        key={d.id}
+                        className={`linha ${selecionado ? "selecionada" : ""} ${reg?.ultimoStatus === "erro" ? "linha-erro" : ""} ${cobrado ? "linha-cobrado" : ""}`}
+                        onClick={() => toggleSelecionado(d.id)}
+                      >
+                        <td className="col-check">
+                          <input type="checkbox" checked={selecionado} onChange={() => toggleSelecionado(d.id)} onClick={(e) => e.stopPropagation()} />
+                        </td>
+                        <td className="col-nome">{d.devedor}</td>
+                        <td className="col-cpf">{d.cpfCnpj ?? "—"}</td>
+                        <td className="col-valor">{formatarMoeda(d.saldoDevedor)}</td>
+                        <td className="col-dias">
+                          {d.diasAtraso > 0 ? <span className="badge-dias">{d.diasAtraso}d</span> : "—"}
+                        </td>
+                        <td>
+                          <span className={`badge-status ${d.status}`}>
+                            {d.status === "atrasado" ? "Atrasado" : d.status === "pendente" ? "Pendente" : "Pago"}
+                          </span>
+                        </td>
+                        <td className="col-cobranca">
+                          {cobrado ? (
+                            <span className="badge-cobrado">Cobrado</span>
+                          ) : (
+                            <span className="col-vazio">—</span>
+                          )}
+                        </td>
+                        <td className="col-tentativas">
+                          {totalEnvios > 0 ? (
+                            <span className="badge-tentativas ok">{totalEnvios}×</span>
+                          ) : (
+                            <span className="col-vazio">0</span>
+                          )}
+                        </td>
+                        <td className="col-envio">
+                          {reg?.ultimoEnvio ?? d.cobranca?.ultimoEnvio
+                            ? formatarData(reg?.ultimoEnvio ?? d.cobranca!.ultimoEnvio!)
+                            : "—"}
+                        </td>
+                        <td className="col-situacao">
+                          {reg?.ultimoStatus === "enviando" ? (
+                            <span className="situacao-enviando"><span className="dot-pulse" /> Enviando…</span>
+                          ) : reg?.ultimoStatus === "erro" ? (
+                            <span className="situacao-erro" title={reg.ultimoErro}>✗ Erro</span>
+                          ) : cobrado ? (
+                            <span className="situacao-sucesso">✓ Enviado</span>
+                          ) : (
+                            <span className="situacao-aguardando">Aguardando</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="disparos-lista-mobile">
               {devedoresFiltrados.map((d) => {
                 const reg = registros.get(d.id);
                 const totalEnvios = reg?.totalEnvios ?? d.cobranca?.totalEnvios ?? 0;
                 const cobrado = totalEnvios > 0;
                 const selecionado = selecionados.has(d.id);
                 return (
-                  <tr
+                  <article
                     key={d.id}
-                    className={`linha ${selecionado ? "selecionada" : ""} ${reg?.ultimoStatus === "erro" ? "linha-erro" : ""} ${cobrado ? "linha-cobrado" : ""}`}
+                    className={`disparo-card ${selecionado ? "selecionada" : ""} ${reg?.ultimoStatus === "erro" ? "linha-erro" : ""} ${cobrado ? "linha-cobrado" : ""}`}
                     onClick={() => toggleSelecionado(d.id)}
                   >
-                    <td className="col-check">
-                      <input type="checkbox" checked={selecionado} onChange={() => toggleSelecionado(d.id)} onClick={(e) => e.stopPropagation()} />
-                    </td>
-                    <td className="col-nome">{d.devedor}</td>
-                    <td className="col-cpf">{d.cpfCnpj ?? "—"}</td>
-                    <td className="col-valor">{formatarMoeda(d.saldoDevedor)}</td>
-                    <td className="col-dias">
-                      {d.diasAtraso > 0 ? <span className="badge-dias">{d.diasAtraso}d</span> : "—"}
-                    </td>
-                    <td>
+                    <div className="disparo-card-topo">
+                      <input
+                        type="checkbox"
+                        checked={selecionado}
+                        onChange={() => toggleSelecionado(d.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="disparo-card-identidade">
+                        <strong>{d.devedor}</strong>
+                        <span>{d.cpfCnpj ?? "Sem CPF/CNPJ"}</span>
+                      </div>
+                      <span className="disparo-card-valor">{formatarMoeda(d.saldoDevedor)}</span>
+                    </div>
+                    <div className="disparo-card-meta">
                       <span className={`badge-status ${d.status}`}>
                         {d.status === "atrasado" ? "Atrasado" : d.status === "pendente" ? "Pendente" : "Pago"}
                       </span>
-                    </td>
-                    <td className="col-cobranca">
-                      {cobrado ? (
-                        <span className="badge-cobrado">Cobrado</span>
-                      ) : (
-                        <span className="col-vazio">—</span>
-                      )}
-                    </td>
-                    <td className="col-tentativas">
-                      {totalEnvios > 0 ? (
-                        <span className="badge-tentativas ok">{totalEnvios}×</span>
-                      ) : (
-                        <span className="col-vazio">0</span>
-                      )}
-                    </td>
-                    <td className="col-envio">
-                      {reg?.ultimoEnvio ?? d.cobranca?.ultimoEnvio
-                        ? formatarData(reg?.ultimoEnvio ?? d.cobranca!.ultimoEnvio!)
-                        : "—"}
-                    </td>
-                    <td className="col-situacao">
+                      {d.diasAtraso > 0 && <span className="badge-dias">{d.diasAtraso}d</span>}
+                      {cobrado ? <span className="badge-cobrado">Cobrado {totalEnvios}×</span> : null}
+                    </div>
+                    <div className="disparo-card-rodape">
                       {reg?.ultimoStatus === "enviando" ? (
                         <span className="situacao-enviando"><span className="dot-pulse" /> Enviando…</span>
                       ) : reg?.ultimoStatus === "erro" ? (
-                        <span className="situacao-erro" title={reg.ultimoErro}>✗ Erro</span>
+                        <span className="situacao-erro" title={reg.ultimoErro}>✗ Erro ao enviar</span>
                       ) : cobrado ? (
                         <span className="situacao-sucesso">✓ Enviado</span>
                       ) : (
-                        <span className="situacao-aguardando">Aguardando</span>
+                        <span className="situacao-aguardando">Aguardando disparo</span>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </article>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
