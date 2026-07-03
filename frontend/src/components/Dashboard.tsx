@@ -373,18 +373,18 @@ export default function Dashboard({ devedores, carregando }: Props) {
             <tbody>
               {metricas.topSaldos.map((dev, i) => (
                 <tr key={dev.id}>
-                  <td className="top-rank">{i + 1}</td>
-                  <td>
+                  <td className="top-rank" data-label="#">{i + 1}</td>
+                  <td data-label="Devedor">
                     <span className="top-nome">{dev.nome}</span>
                     <span className="top-cpf">{dev.cpfCnpj}</span>
                   </td>
-                  <td>
+                  <td data-label="Dívidas">
                     {dev.qtdDividas}
                     {dev.qtdAtrasadas > 0 && (
                       <span className="top-atrasadas"> ({dev.qtdAtrasadas} atr.)</span>
                     )}
                   </td>
-                  <td className="valor saldo-devedor">{fmt(dev.saldoSemJuros)}</td>
+                  <td className="valor saldo-devedor" data-label="Saldo">{fmt(dev.saldoSemJuros)}</td>
                 </tr>
               ))}
             </tbody>
@@ -408,13 +408,13 @@ export default function Dashboard({ devedores, carregando }: Props) {
               <tbody>
                 {metricas.topAtrasados.map((dev, i) => (
                   <tr key={dev.id}>
-                    <td className="top-rank">{i + 1}</td>
-                    <td>
+                    <td className="top-rank" data-label="#">{i + 1}</td>
+                    <td data-label="Devedor">
                       <span className="top-nome">{dev.nome}</span>
                       <span className="top-cpf">{dev.qtdAtrasadas} dívida(s) atrasada(s)</span>
                     </td>
-                    <td><span className="badge-dias-dashboard">{dev.maxDias}d</span></td>
-                    <td className="valor saldo-devedor">{fmt(dev.saldoAtrasado)}</td>
+                    <td data-label="Atraso"><span className="badge-dias-dashboard">{dev.maxDias}d</span></td>
+                    <td className="valor saldo-devedor" data-label="Saldo atrasado">{fmt(dev.saldoAtrasado)}</td>
                   </tr>
                 ))}
               </tbody>

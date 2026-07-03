@@ -121,12 +121,17 @@ body {
 
   .app-conteudo {
     padding: 20px 16px 40px;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
   }
 
   .sidebar {
     position: fixed;
     left: 0;
     top: 0;
+    height: 100vh;
+    height: 100dvh;
     z-index: 100;
     transform: translateX(-100%);
     transition: transform var(--transicao);
@@ -147,10 +152,15 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  position: sticky;
-  top: 0;
   height: 100vh;
   overflow-y: auto;
+}
+
+@media (min-width: 961px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+  }
 }
 
 .sidebar-logo {
@@ -1743,6 +1753,7 @@ tbody tr:hover {
   padding: 16px 20px;
   cursor: pointer;
   gap: 16px;
+  flex-wrap: wrap;
   transition: background-color var(--transicao);
 }
 
@@ -1819,7 +1830,9 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   gap: 20px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .total-item {
@@ -2881,20 +2894,26 @@ tbody tr:hover {
 /* Tabelas empilhadas (mobile) */
 
 @media (max-width: 768px) {
-  .tabela-empilhada thead {
+  .tabela-empilhada thead,
+  .tabela-top thead {
     display: none;
   }
 
   .tabela-empilhada,
   .tabela-empilhada tbody,
   .tabela-empilhada tr,
-  .tabela-empilhada td {
+  .tabela-empilhada td,
+  .tabela-top,
+  .tabela-top tbody,
+  .tabela-top tr,
+  .tabela-top td {
     display: block;
     width: 100%;
     min-width: 0;
   }
 
-  .tabela-empilhada tr {
+  .tabela-empilhada tr,
+  .tabela-top tr {
     margin-bottom: 12px;
     padding: 12px;
     border: 1px solid var(--cor-borda);
@@ -2902,11 +2921,13 @@ tbody tr:hover {
     background: var(--cor-fundo);
   }
 
-  .tabela-empilhada tr:last-child {
+  .tabela-empilhada tr:last-child,
+  .tabela-top tr:last-child {
     margin-bottom: 0;
   }
 
-  .tabela-empilhada td {
+  .tabela-empilhada td,
+  .tabela-top td {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2916,7 +2937,8 @@ tbody tr:hover {
     text-align: right;
   }
 
-  .tabela-empilhada td::before {
+  .tabela-empilhada td::before,
+  .tabela-top td::before {
     content: attr(data-label);
     font-size: 0.68rem;
     font-weight: 700;
@@ -2925,6 +2947,11 @@ tbody tr:hover {
     color: var(--cor-texto-secundario);
     text-align: left;
     flex-shrink: 0;
+  }
+
+  .tabela-top td .top-nome,
+  .tabela-top td .top-cpf {
+    text-align: right;
   }
 
   .tabela-empilhada td.acoes {
@@ -2945,12 +2972,23 @@ tbody tr:hover {
     min-height: 40px;
   }
 
-  .tabela-empilhada tbody tr:hover {
+  .tabela-empilhada tbody tr:hover,
+  .tabela-top tbody tr:hover {
     background: var(--cor-fundo);
   }
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .input-com-botao {
+    flex-direction: column;
+  }
+
+  .input-com-botao .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 
   .card-corpo {
