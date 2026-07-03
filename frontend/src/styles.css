@@ -27,12 +27,18 @@
   --transicao: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--cor-fundo);
   color: var(--cor-texto);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* =============================== Layout Principal =============================== */
@@ -2055,12 +2061,49 @@ tbody tr:hover {
 }
 
 @media (max-width: 700px) {
-  .devedor-totais {
-    display: none;
+  .card-devedor-header {
+    position: relative;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 36px 14px 16px;
   }
 
-  .card-devedor-header {
+  .devedor-totais {
     flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .total-item {
+    align-items: flex-start;
+  }
+
+  .seta {
+    position: absolute;
+    top: 18px;
+    right: 14px;
+  }
+
+  .devedor-detalhes {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 16px 12px;
+  }
+
+  .detalhe-botoes {
+    width: 100%;
+  }
+
+  .detalhe-botoes .btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .card-devedor-dividas {
+    padding: 0 12px 12px;
   }
 }
 
@@ -2490,4 +2533,243 @@ tbody tr:hover {
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+/* =============================== Mobile (telas pequenas) =============================== */
+
+.sidebar-btn-fechar {
+  display: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--raio-borda-sm);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: background var(--transicao);
+}
+
+.sidebar-btn-fechar:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 960px) {
+  .sidebar-btn-fechar {
+    display: inline-flex;
+  }
+
+  .app-conteudo {
+    padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 640px) {
+  .app-conteudo {
+    padding: 16px 12px max(32px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-topbar {
+    margin-bottom: 16px;
+  }
+
+  .pagina-cabecalho h1,
+  .dashboard-titulo {
+    font-size: 1.3rem;
+  }
+
+  .pagina-cabecalho p,
+  .dashboard-subtitulo {
+    font-size: 0.82rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .dashboard-recuperacao {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .hero-valor {
+    font-size: 1.4rem;
+  }
+
+  .kpi-valor {
+    font-size: 1.15rem;
+  }
+
+  .pagina-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .secao-acoes {
+    width: 100%;
+  }
+
+  .secao-acoes .btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .login-form-area {
+    padding: 24px 16px;
+    align-items: flex-start;
+    padding-top: 32px;
+  }
+
+  .login-card {
+    padding: 28px 20px;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 92dvh;
+    overflow-y: auto;
+    padding: 20px 16px max(20px, env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-detalhes {
+    max-width: none;
+  }
+
+  .modal-acoes {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-acoes .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .disparos-header {
+    flex-direction: column;
+  }
+
+  .disparos-header .header-titulo h2 {
+    font-size: 1.25rem;
+  }
+
+  .disparos-header .header-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .disparos-header .stat-pill {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+
+  .disparos-header .stat-pill span {
+    font-size: 1.15rem;
+  }
+
+  .webhook-input-row {
+    flex-direction: column;
+  }
+
+  .webhook-input,
+  .btn-salvar {
+    width: 100%;
+  }
+
+  .barra-acoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .barra-esquerda,
+  .barra-direita {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtro-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
+  .filtro-tabs .tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 8px 12px;
+  }
+
+  .disparos-container .busca-input {
+    width: 100%;
+  }
+
+  .btn-atalho,
+  .btn-disparar {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .tabela-devedores .col-cpf,
+  .tabela-devedores .col-envio,
+  .tabela-devedores .col-tentativas,
+  .tabela-devedores th:nth-child(3),
+  .tabela-devedores th:nth-child(8),
+  .tabela-devedores th:nth-child(9) {
+    display: none;
+  }
+
+  .disparos-container .tabela-wrapper,
+  .card-devedor-dividas {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vencimento-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .barra-legenda {
+    gap: 12px;
+  }
+
+  .acoes {
+    flex-wrap: wrap;
+  }
+
+  .acoes .btn {
+    min-height: 36px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .btn-menu-mobile,
+  .sidebar-item,
+  .filtro-pill,
+  .filtro-tabs .tab {
+    min-height: 44px;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
 }
